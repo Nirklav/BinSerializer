@@ -5,14 +5,14 @@ namespace ThirtyNineEighty.BinSerializer
   [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
   public class TypeAttribute : Attribute
   {
-    public int Id { get; private set; }
+    public string Id { get; private set; }
     public int Version { get; set; }
     public int MinSupportedVersion { get; set; }
 
-    public TypeAttribute(int id)
+    public TypeAttribute(string id)
     {
-      if (id <= 0)
-        throw new ArgumentException("Ids that less or equal to zero is reserved.");
+      if (string.IsNullOrEmpty(id))
+        throw new ArgumentException("Id must have value.");
 
       Id = id;
     }

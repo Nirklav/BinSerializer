@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace ThirtyNineEighty.BinSerializer
 {
@@ -78,17 +79,19 @@ namespace ThirtyNineEighty.BinSerializer
       {
         BSDebug.TraceStart("Start read of ...");
 
-        var type = stream.ReadType();
+        var typeId = stream.ReadString();
 
-        BSDebug.TraceStart("... " + type.Name);
+        Type type;
+        if (!string.Equals(typeId, Types.ArrayToken, StringComparison.OrdinalIgnoreCase))
+          type = Types.GetType(typeId);
+        else
+        {
+          var arrayElementTypeId = stream.ReadString();
+          var arrayElementType = Types.GetType(arrayElementTypeId);
+          type = arrayElementType.MakeArrayType();
+        }
 
-        var refId = stream.ReadInt32();
-        if (refId == 0)
-          return default(T);
-
-        object deserialized;
-        if (RefReaderWatcher.TryGetRef(refId, out deserialized))
-          return (T)deserialized;
+        BSDebug.TraceStart("... " + typeId);
 
         var reader = SerializerBuilder.GetReader(type);
         return (T)reader(stream);

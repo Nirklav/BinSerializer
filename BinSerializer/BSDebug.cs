@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -13,25 +11,25 @@ namespace ThirtyNineEighty.BinSerializer
     [Conditional("DEBUG")]
     public static void TraceStart(string methodName)
     {
-      WriteImpl($"Type serialization start { methodName }\r\n");
+      WriteImpl($"Type start { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     public static void TraceEnd(string methodName)
     {
-      WriteImpl($"Type serialization end { methodName }\r\n");
+      WriteImpl($"Type end { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     public static void TraceStart(ILGenerator il, string methodName)
     {
-      Write(il, $"Type serialization start { methodName }\r\n");
+      Write(il, $"Type start { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     public static void TraceEnd(ILGenerator il, string methodName)
     {
-      Write(il, $"Type serialization end { methodName }\r\n");
+      Write(il, $"Type end { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
@@ -56,7 +54,7 @@ namespace ThirtyNineEighty.BinSerializer
     [Conditional("DEBUG")]
     private static void WriteImpl(string text)
     {
-      File.AppendAllText(TraceFile, text);
+      //File.AppendAllText(TraceFile, text);
     }
   }
 }

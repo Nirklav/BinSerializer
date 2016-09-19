@@ -24,29 +24,10 @@ namespace ThirtyNineEighty.BinSerializer
     }
   }
 
+  // TODO: add DateTime
   public static class StreamExtensions
   {
     #region writers
-    [StreamExtension(typeof(Type), StreamExtensionKind.Write)]
-    public static void Write(this Stream stream, Type type)
-    {
-      BSDebug.TraceStart("WriteType", stream.Position);
-
-      int typeId;
-      if (Types.TryGetTypeId(type, out typeId))
-      {
-        stream.WriteByte(0);
-        stream.Write(typeId);
-      }
-      else
-      {
-        stream.WriteByte(1);
-        stream.Write(type.FullName);
-      }
-
-      BSDebug.TraceEnd("WriteType", stream.Position);
-    }
-
     [StreamExtension(typeof(bool), StreamExtensionKind.Write)]
     public static void Write(this Stream stream, bool obj)
     {
@@ -252,32 +233,6 @@ namespace ThirtyNineEighty.BinSerializer
     #endregion
 
     #region readers
-    [StreamExtension(typeof(Type), StreamExtensionKind.Read)]
-    public static Type ReadType(this Stream stream)
-    {
-      BSDebug.TraceStart("ReadType", stream.Position);
-
-      var typeFormat = stream.ReadByte();
-      if (typeFormat == 0)
-      {
-        var typeId = stream.ReadInt32();
-
-        Type type;
-        if (!Types.TryGetType(typeId, out type))
-          throw new InvalidDataException($"Type by { typeId } type id not found");
-
-        BSDebug.TraceEnd("ReadType", stream.Position);
-        return type;
-      }
-      else
-      {
-        var typeName = stream.ReadString();
-
-        BSDebug.TraceEnd("ReadType", stream.Position);
-        return Type.GetType(typeName);
-      }
-    }
-
     [StreamExtension(typeof(bool), StreamExtensionKind.Read)]
     public static bool ReadBoolean(this Stream stream)
     {
@@ -503,21 +458,7 @@ namespace ThirtyNineEighty.BinSerializer
     }
     #endregion
 
-    #region skip
-    [StreamExtension(typeof(Type), StreamExtensionKind.Skip)]
-    public static void SkipType(this Stream stream)
-    {
-      BSDebug.TraceStart("SkipType", stream.Position);
-
-      var typeFormat = stream.ReadByte();
-      if (typeFormat == 0)
-        stream.SkipInt32();
-      else
-        stream.SkipString();
-
-      BSDebug.TraceEnd("SkipType", stream.Position);
-    }
-
+    #region skipers
     [StreamExtension(typeof(bool), StreamExtensionKind.Skip)]
     public static void SkipBoolean(this Stream stream)
     {
