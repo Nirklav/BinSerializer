@@ -7,9 +7,9 @@ namespace ThirtyNineEighty.BinSerializer
 {
   public static class Types
   {
-    public const string NullToken = "Null";
-    public const string TypeEndToken = "Type end";
-    public const string ArrayToken = "Array";
+    public const string NullToken = "nil";
+    public const string TypeEndToken = "end";
+    public const string ArrayToken = "arr";
 
     private class TypeInfo
     {

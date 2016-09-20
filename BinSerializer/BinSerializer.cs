@@ -91,7 +91,7 @@ namespace ThirtyNineEighty.BinSerializer
           type = arrayElementType.MakeArrayType();
         }
 
-        BSDebug.TraceStart("... " + typeId);
+        BSDebug.TraceStart("... " + type.Name);
 
         var reader = SerializerBuilder.GetReader(type);
         return (T)reader(stream);

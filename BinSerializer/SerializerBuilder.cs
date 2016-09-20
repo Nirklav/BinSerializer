@@ -334,8 +334,9 @@ namespace ThirtyNineEighty.BinSerializer
       var getLowerBound = typeof(Array).GetMethod(nameof(Array.GetLowerBound), BindingFlags.Instance | BindingFlags.Public);
       var serialize = typeof(BinSerializer).GetMethod(nameof(BinSerializer.Serialize), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
 
-      il.DeclareLocal(typeof(int));
-      il.DeclareLocal(typeof(bool));
+      il.DeclareLocal(typeof(int)); // Array length
+      il.DeclareLocal(typeof(int)); // Array index
+      il.DeclareLocal(typeof(bool)); // Ref id created flag
 
       var skipLabel = il.DefineLabel();
       var zeroBased = il.DefineLabel();
@@ -357,13 +358,13 @@ namespace ThirtyNineEighty.BinSerializer
       // Write refId
       il.Emit(OpCodes.Ldarg_0);         // Load stream
       il.Emit(OpCodes.Ldarg_1);         // Load obj
-      il.Emit(OpCodes.Ldloca_S, 1);     // Load address of bool local
+      il.Emit(OpCodes.Ldloca_S, 2);     // Load address of bool local
       il.Emit(OpCodes.Call, getRefId);  // Obj => RefId
       il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
 
       // Check case when reference type already serialized.
       // If null be returned then created flag be zero too and serialization will be skipped.
-      il.Emit(OpCodes.Ldloc_1);
+      il.Emit(OpCodes.Ldloc_2);
       il.Emit(OpCodes.Brfalse, skipLabel);
 
       var dim = type.GetArrayRank();
@@ -381,36 +382,41 @@ namespace ThirtyNineEighty.BinSerializer
         il.Emit(OpCodes.Throw);
 
         // Write array length
+        il.MarkLabel(zeroBased);
         il.Emit(OpCodes.Ldarg_0); // Load stream
         il.Emit(OpCodes.Ldarg_1); // Load array
         il.Emit(OpCodes.Ldlen);   // Load array length
         il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
 
-        // Get last array index
-        il.MarkLabel(zeroBased);
-        il.Emit(OpCodes.Ldarg_1);  // Load array
-        il.Emit(OpCodes.Ldlen);    // Load array length
-        il.Emit(OpCodes.Stloc_0);  // Set to 0 local
+        // Set array length
+        il.Emit(OpCodes.Ldarg_1); // Load array
+        il.Emit(OpCodes.Ldlen);   // Load array length
+        il.Emit(OpCodes.Stloc_0); // Set to 0 local
+
+        // Set array index to 0
+        il.Emit(OpCodes.Ldc_I4_0); // Load 0
+        il.Emit(OpCodes.Stloc_1);  // Set to 1 local
 
         // Loop start
         il.MarkLabel(loopLabel);
 
         // Loop check
-        il.Emit(OpCodes.Ldloc_0);                // Load current index
-        il.Emit(OpCodes.Brfalse, exitLoopLabel); // If zero then exit
-
-        // Derement
-        il.Emit(OpCodes.Ldloc_0);  // Load current index
-        il.Emit(OpCodes.Ldc_I4_1); // Load 1
-        il.Emit(OpCodes.Sub);      // Subtract
-        il.Emit(OpCodes.Stloc_0);  // Set current index
+        il.Emit(OpCodes.Ldloc_0);            // Load array length
+        il.Emit(OpCodes.Ldloc_1);            // Load current index
+        il.Emit(OpCodes.Beq, exitLoopLabel); // If equals then exit
 
         // Write element to stream
         il.Emit(OpCodes.Ldarg_0);             // Load stream
         il.Emit(OpCodes.Ldarg_1);             // Load array
-        il.Emit(OpCodes.Ldloc_0);             // Load current index
+        il.Emit(OpCodes.Ldloc_1);             // Load current index
         il.Emit(OpCodes.Ldelem, elementType); // Load element
         il.Emit(OpCodes.Call, serialize);
+
+        // Inrement
+        il.Emit(OpCodes.Ldloc_1);  // Load current index
+        il.Emit(OpCodes.Ldc_I4_1); // Load 1
+        il.Emit(OpCodes.Add);      // Add
+        il.Emit(OpCodes.Stloc_1);  // Set current index
 
         // Jump to loop start
         il.Emit(OpCodes.Br, loopLabel); 

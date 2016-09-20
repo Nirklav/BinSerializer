@@ -13,18 +13,18 @@ namespace Tests
     {
       [Field("a")]
       public string StrField;
-
+      
       [Field("i")]
       public int IntField;
       
       [Field("b")]
       public Test InnerField;
-
+      
       [Field("x")]
       public TestStruct InnerStructField;
 
-      //[Field("c")]
-      //public int[] ArrayField;
+      [Field("c")]
+      public int[] ArrayField;
     }
 
     [Type("TestStruct")]
@@ -40,19 +40,29 @@ namespace Tests
     [TestMethod]
     public void SerializeTest()
     {
-      var testInstance = new Test();
-      testInstance.StrField = "str value";
-      testInstance.IntField = 255;
-      testInstance.InnerField = testInstance;
-      testInstance.InnerStructField = new TestStruct();
-      testInstance.InnerStructField.IntField = 10;
-      testInstance.InnerStructField.FloatField = 0.55f;
-      //testInstance.ArrayField = new int[] { 1, 3, 3, 7 };
+      var test = new Test();
+      test.StrField = "str value";
+      test.IntField = 255;
+      test.InnerField = test;
+      test.InnerStructField = new TestStruct();
+      test.InnerStructField.IntField = 10;
+      test.InnerStructField.FloatField = 0.55f;
+      test.ArrayField = new int[] { 1, 3, 3, 7 };
 
       var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, testInstance);
+      BinSerializer.Serialize(stream, test);
       stream.Position = 0;
-      var deserializedTest = BinSerializer.Deserialize<object>(stream);
+      var test2 = BinSerializer.Deserialize<Test>(stream);
+
+      Assert.AreEqual(test.StrField, test2.StrField);
+      Assert.AreEqual(test.IntField, test2.IntField);
+      Assert.AreEqual(ReferenceEquals(test, test.InnerField), ReferenceEquals(test2, test2.InnerField));
+      Assert.AreEqual(test.InnerStructField.IntField, test2.InnerStructField.IntField);
+      Assert.AreEqual(test.InnerStructField.FloatField, test2.InnerStructField.FloatField);
+      Assert.AreEqual(test.ArrayField.Length, test2.ArrayField.Length);
+
+      for (int i = 0; i < test.ArrayField.Length; i++)
+        Assert.AreEqual(test.ArrayField[i], test2.ArrayField[i]);
     }
   }
 }
