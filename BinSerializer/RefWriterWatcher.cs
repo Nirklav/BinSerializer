@@ -6,26 +6,29 @@ namespace ThirtyNineEighty.BinSerializer
   public struct RefWriterWatcher : IDisposable
   {
     [ThreadStatic]
-    private static readonly Dictionary<object, int> _refIds = new Dictionary<object, int>();
+    private static Dictionary<object, int> _refIds;
 
     [ThreadStatic]
     private static int _lastRefId;
 
     [ThreadStatic]
-    private static bool RootCreated;
+    private static bool _rootCreated;
 
-    private bool isRoot;
+    private readonly bool _isRoot;
 
     public RefWriterWatcher(bool unsued = true)
     {
-      if (RootCreated)
+      if (_refIds == null)
+        _refIds = new Dictionary<object, int>();
+
+      if (_rootCreated)
       {
-        isRoot = false;
+        _isRoot = false;
       }
       else
       {
-        isRoot = true;
-        RootCreated = true;
+        _isRoot = true;
+        _rootCreated = true;
       }
     }
 
@@ -51,10 +54,10 @@ namespace ThirtyNineEighty.BinSerializer
 
     public void Dispose()
     {
-      if (isRoot)
+      if (_isRoot)
       {
         _refIds.Clear();
-        RootCreated = false;
+        _rootCreated = false;
       }
     }
   }

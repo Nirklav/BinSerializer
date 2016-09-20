@@ -87,7 +87,7 @@ namespace ThirtyNineEighty.BinSerializer
       {
         TypeInfo info;
         if (!_typesByType.TryGetValue(type, out info))
-          throw new ArgumentNullException("Type id not found");
+          throw new ArgumentException("Type id not found");
         return info.Id;
       }
       finally
@@ -103,7 +103,7 @@ namespace ThirtyNineEighty.BinSerializer
       {
         TypeInfo info;
         if (!_typesById.TryGetValue(typeId, out info))
-          throw new ArgumentNullException("Type not found");
+          throw new ArgumentException("Type not found");
         return info.Type;
       }
       finally
@@ -119,7 +119,7 @@ namespace ThirtyNineEighty.BinSerializer
       {
         TypeInfo info;
         if (!_typesByType.TryGetValue(type, out info))
-          throw new ArgumentNullException("Version not found");
+          throw new ArgumentException("Version not found");
         return info.Version;
       }
       finally
@@ -135,7 +135,7 @@ namespace ThirtyNineEighty.BinSerializer
       {
         TypeInfo info;
         if (!_typesByType.TryGetValue(type, out info))
-          throw new ArgumentNullException("Min version not found");
+          throw new ArgumentException("Min version not found");
         return info.MinSupportedVersion;
       }
       finally

@@ -10,10 +10,10 @@ using System.Runtime.Serialization;
 namespace ThirtyNineEighty.BinSerializer
 {
   public delegate void Writer(Stream stream, object obj);
-  public delegate void Writer<T>(Stream stream, T obj);
+  public delegate void Writer<in T>(Stream stream, T obj);
 
   public delegate object Reader(Stream stream);
-  public delegate T Reader<T>(Stream stream);
+  public delegate T Reader<out T>(Stream stream);
 
   /* Serialization format:
    * 
@@ -225,11 +225,11 @@ namespace ThirtyNineEighty.BinSerializer
       DynamicMethod dynamicMethod = null;
 
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new Type[] { typeof(Stream), type }, type, true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), type }, type, true);
       if (type.IsClass && !type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new Type[] { typeof(Stream), typeof(object) }, type, true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type, true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new Type[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException($"DynamicMethod not bilded for type: { type }");
@@ -377,7 +377,7 @@ namespace ThirtyNineEighty.BinSerializer
 
         // Throw exception if non zero based
         il.Emit(OpCodes.Ldstr, "Non zero based arrays not supported.");
-        il.Emit(OpCodes.Newobj, typeof(InvalidOperationException).GetConstructor(new Type[] { typeof(string) }));
+        il.Emit(OpCodes.Newobj, typeof(InvalidOperationException).GetConstructor(new[] { typeof(string) }));
         il.Emit(OpCodes.Throw);
 
         // Write array length
@@ -457,11 +457,11 @@ namespace ThirtyNineEighty.BinSerializer
       DynamicMethod dynamicMethod = null;
 
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), type, new Type[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), type, new[] { typeof(Stream) }, type, true);
       if (type.IsClass && !type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new Type[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type, true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new Type[] { typeof(Stream) }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException($"DynamicMethod not bilded for type: { type }");
@@ -617,8 +617,6 @@ namespace ThirtyNineEighty.BinSerializer
 
     private static void CreateArrayReader(ILGenerator il, Type type)
     {
-      throw new NotImplementedException();
-
       var elementType = type.GetElementType();
 
       var addRef = typeof(RefReaderWatcher).GetMethod(nameof(RefReaderWatcher.AddRef), BindingFlags.Public | BindingFlags.Static);
@@ -627,38 +625,66 @@ namespace ThirtyNineEighty.BinSerializer
 
       // array token and element type id already was readed
 
+      il.DeclareLocal(typeof(int)); // Ref id
       il.DeclareLocal(typeof(int)); // Array length
       il.DeclareLocal(typeof(int)); // Current index
       il.DeclareLocal(type);        // Result array
 
       var loopLabel = il.DefineLabel();
       var resultLabel = il.DefineLabel();
+      var tryLoadReferenceLabel = il.DefineLabel();
+
+      // Read reference id
+      il.Emit(OpCodes.Ldarg_0);                           // Load stream
+      il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read ref id
+      il.Emit(OpCodes.Dup);                               // Duplicate ref id
+      il.Emit(OpCodes.Stloc_0);                           // Set ref id to local
+
+      // Check if result null
+      il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel);     // Check if null was written
+
+      // Null was written (return null)
+      il.Emit(OpCodes.Ldnull);
+      il.Emit(OpCodes.Stloc_3);         // Set result to null
+      il.Emit(OpCodes.Br, resultLabel); // Jump to result
+
+      // Try get readed reference
+      il.MarkLabel(tryLoadReferenceLabel);
+      il.Emit(OpCodes.Ldloc_0);             // Load reference id
+      il.Emit(OpCodes.Ldloca_S, 3);         // Load address of result
+      il.Emit(OpCodes.Call, tryGetRef);
+      il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
 
       // Read array length
       il.Emit(OpCodes.Ldarg_0);                           // Load stream
       il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read length
-      il.Emit(OpCodes.Stloc_0);                           // Set array length
+      il.Emit(OpCodes.Stloc_1);                           // Set array length
 
       // Set current index
       il.Emit(OpCodes.Ldc_I4_0);                          // Load zero
-      il.Emit(OpCodes.Stloc_1);                           // Set current index
+      il.Emit(OpCodes.Stloc_2);                           // Set current index
 
       // Create array
-      il.Emit(OpCodes.Ldloc_0);             // Load array length
+      il.Emit(OpCodes.Ldloc_1);             // Load array length
       il.Emit(OpCodes.Newarr, elementType); // Create array
-      il.Emit(OpCodes.Stloc_2);             // Set array to local
+      il.Emit(OpCodes.Stloc_3);             // Set array to local
+
+      // Set ref id
+      il.Emit(OpCodes.Ldloc_0); // Load reference id
+      il.Emit(OpCodes.Ldloc_3); // Load result object reference
+      il.Emit(OpCodes.Call, addRef);
 
       // Loop
       il.MarkLabel(loopLabel);
 
       // Check array end
-      il.Emit(OpCodes.Ldloc_0); // Load length
-      il.Emit(OpCodes.Ldloc_1); // Load index
+      il.Emit(OpCodes.Ldloc_1); // Load length
+      il.Emit(OpCodes.Ldloc_2); // Load index
       il.Emit(OpCodes.Beq, resultLabel);
 
       // Prepare set element
-      il.Emit(OpCodes.Ldloc_2); // Load array
-      il.Emit(OpCodes.Ldloc_1); // Load index
+      il.Emit(OpCodes.Ldloc_3); // Load array
+      il.Emit(OpCodes.Ldloc_2); // Load index
 
       // Read value
       il.Emit(OpCodes.Ldarg_0);           // Load stream
@@ -668,16 +694,16 @@ namespace ThirtyNineEighty.BinSerializer
       il.Emit(OpCodes.Stelem, elementType);
 
       // Inrement index
-      il.Emit(OpCodes.Ldloc_1);  // Load index
+      il.Emit(OpCodes.Ldloc_2);  // Load index
       il.Emit(OpCodes.Ldc_I4_1); // Load one
       il.Emit(OpCodes.Add);      // Sum
-      il.Emit(OpCodes.Stloc_1);  // Set index
+      il.Emit(OpCodes.Stloc_2);  // Set index
 
       // Go to loop start
       il.Emit(OpCodes.Br, loopLabel);
 
       il.MarkLabel(resultLabel);
-      il.Emit(OpCodes.Ldloc_2); // Load result array
+      il.Emit(OpCodes.Ldloc_3); // Load result array
       il.Emit(OpCodes.Ret);
     }
 

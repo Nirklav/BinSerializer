@@ -46,7 +46,7 @@ namespace ThirtyNineEighty.BinSerializer
     {
       return (stream, obj) =>
       {
-        var type = obj == null ? typeof(T) : obj.GetType();
+        var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
         var writer = SerializerBuilder.GetWriter(type);
         writer(stream, obj);
       };
