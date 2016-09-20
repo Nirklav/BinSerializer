@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
   [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
   public class TypeAttribute : Attribute

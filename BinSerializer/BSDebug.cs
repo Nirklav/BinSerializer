@@ -3,9 +3,9 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
-  public static class BSDebug
+  static class BSDebug
   {
     private const string TraceFile = @"D:\trace.txt";
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
   [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
   public class FieldAttribute : Attribute

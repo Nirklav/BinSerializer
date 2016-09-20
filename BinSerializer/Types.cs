@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
   public static class Types
   {

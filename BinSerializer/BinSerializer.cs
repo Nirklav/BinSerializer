@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
   public static class BinSerializer
   {
@@ -16,7 +16,7 @@ namespace ThirtyNineEighty.BinSerializer
     }
   }
 
-  public static class BinSerializer<T>
+  static class BinSerializer<T>
   {
     // Simple and powerful cache
     private static readonly Writer<T> _writerInvoker = GetWriterInvoker();

@@ -7,13 +7,13 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
-  public delegate void Writer(Stream stream, object obj);
-  public delegate void Writer<in T>(Stream stream, T obj);
+  delegate void Writer(Stream stream, object obj);
+  delegate void Writer<in T>(Stream stream, T obj);
 
-  public delegate object Reader(Stream stream);
-  public delegate T Reader<out T>(Stream stream);
+  delegate object Reader(Stream stream);
+  delegate T Reader<out T>(Stream stream);
 
   /* Serialization format:
    * 
@@ -143,7 +143,7 @@ namespace ThirtyNineEighty.BinSerializer
    * |-------------------------------------|
    * */
 
-  public static class SerializerBuilder
+  static class SerializerBuilder
   {
     private static readonly ConcurrentDictionary<Type, DynamicMethod> _writersD = new ConcurrentDictionary<Type, DynamicMethod>();
     private static readonly ConcurrentDictionary<Type, DynamicMethod> _readersD = new ConcurrentDictionary<Type, DynamicMethod>();

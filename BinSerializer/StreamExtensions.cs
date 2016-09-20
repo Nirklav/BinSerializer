@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
   enum StreamExtensionKind
   {

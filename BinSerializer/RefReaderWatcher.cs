@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ThirtyNineEighty.BinSerializer
+namespace ThirtyNineEighty.BinarySerializer
 {
-  public struct RefReaderWatcher : IDisposable
+  struct RefReaderWatcher : IDisposable
   {
     [ThreadStatic]
     private static Dictionary<int, object> _idToRef;

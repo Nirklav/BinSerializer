@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
-using ThirtyNineEighty.BinSerializer;
+using ThirtyNineEighty.BinarySerializer;
 
 namespace Tests
 {
