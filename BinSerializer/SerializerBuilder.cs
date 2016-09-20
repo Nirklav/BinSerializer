@@ -175,7 +175,7 @@ namespace ThirtyNineEighty.BinarySerializer
       AddType<double>();
       AddType<decimal>();
       AddType<string>();
-      //AddType<DateTime>();
+      AddType<DateTime>();
     }
 
     private static void AddType<T>()

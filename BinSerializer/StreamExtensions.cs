@@ -24,9 +24,10 @@ namespace ThirtyNineEighty.BinarySerializer
     }
   }
 
-  // TODO: add DateTime
   public static class StreamExtensions
   {
+    private static readonly DateTime _unixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     #region writers
     [StreamExtension(typeof(bool), StreamExtensionKind.Write)]
     public static void Write(this Stream stream, bool obj)
@@ -229,6 +230,17 @@ namespace ThirtyNineEighty.BinarySerializer
         stream.Write(ch);
 
       BSDebug.TraceEnd("WriteString", stream.Position);
+    }
+
+    [StreamExtension(typeof(DateTime), StreamExtensionKind.Write)]
+    public static void Write(this Stream stream, DateTime obj)
+    {
+      BSDebug.TraceStart("WriteDateTime", stream.Position);
+
+      var seconds = obj - _unixEpochStart;
+      stream.Write((long)seconds.TotalSeconds);
+
+      BSDebug.TraceEnd("WriteDateTime", stream.Position);
     }
     #endregion
 
@@ -456,6 +468,17 @@ namespace ThirtyNineEighty.BinarySerializer
       BSDebug.TraceEnd("ReadString", stream.Position);
       return builder.ToString();
     }
+
+    [StreamExtension(typeof(DateTime), StreamExtensionKind.Read)]
+    public static DateTime ReadDateTime(this Stream stream)
+    {
+      BSDebug.TraceStart("ReadDateTime", stream.Position);
+
+      var unixTime = stream.ReadInt64();
+
+      BSDebug.TraceEnd("ReadDateTime", stream.Position);
+      return _unixEpochStart.AddSeconds(unixTime);
+    }
     #endregion
 
     #region skipers
@@ -598,6 +621,16 @@ namespace ThirtyNineEighty.BinarySerializer
       stream.Position += strLength * sizeof(char);
 
       BSDebug.TraceEnd("SkipString", stream.Position);
+    }
+
+    [StreamExtension(typeof(DateTime), StreamExtensionKind.Skip)]
+    public static void SkipDateTime(this Stream stream)
+    {
+      BSDebug.TraceStart("SkipDateTime", stream.Position);
+
+      stream.Position += sizeof(long);
+
+      BSDebug.TraceEnd("SkipDateTime", stream.Position);
     }
     #endregion
 
