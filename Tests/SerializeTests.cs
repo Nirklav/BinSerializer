@@ -19,12 +19,18 @@ namespace Tests
       
       [Field("b")]
       public Test InnerField;
-      
+
       [Field("x")]
       public TestStruct InnerStructField;
 
       [Field("c")]
       public int[] ArrayField;
+
+      [Field("g")]
+      public Test NullField;
+
+      [Field("n")]
+      public IJob InterfaceField;
     }
 
     [Type("TestStruct")]
@@ -35,6 +41,19 @@ namespace Tests
 
       [Field("a")]
       public float FloatField;
+    }
+
+    interface IJob
+    {
+      int JobId { get; }
+    }
+
+    [Type("Job")]
+    class Job : IJob
+    {
+      [Field("j")]
+      public int _jobId = 100;
+      public int JobId { get { return _jobId; } }
     }
 
     [TestMethod]
@@ -48,6 +67,7 @@ namespace Tests
       test.InnerStructField.IntField = 10;
       test.InnerStructField.FloatField = 0.55f;
       test.ArrayField = new int[] { 1, 3, 3, 7 };
+      test.InterfaceField = new Job();
 
       var stream = new MemoryStream();
       BinSerializer.Serialize(stream, test);
@@ -63,6 +83,9 @@ namespace Tests
 
       for (int i = 0; i < test.ArrayField.Length; i++)
         Assert.AreEqual(test.ArrayField[i], test2.ArrayField[i]);
+
+      Assert.AreEqual(test.NullField, test2.NullField);
+      Assert.AreEqual(((Job)test.InterfaceField).JobId, ((Job)test2.InterfaceField).JobId);
     }
   }
 }
