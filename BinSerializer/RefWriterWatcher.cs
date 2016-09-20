@@ -16,7 +16,7 @@ namespace ThirtyNineEighty.BinSerializer
 
     private readonly bool _isRoot;
 
-    public RefWriterWatcher(bool unsued = true)
+    public RefWriterWatcher(bool unsued)
     {
       if (_refIds == null)
         _refIds = new Dictionary<object, int>();

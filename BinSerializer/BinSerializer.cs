@@ -25,7 +25,7 @@ namespace ThirtyNineEighty.BinSerializer
     #region serialization
     public static void Serialize(Stream stream, T obj)
     {
-      using (var watcher = new RefWriterWatcher())
+      using (var watcher = new RefWriterWatcher(true))
         _writerInvoker(stream, obj);
     }
 
@@ -56,7 +56,7 @@ namespace ThirtyNineEighty.BinSerializer
     #region deserialization
     public static T Deserialize(Stream stream)
     {
-      using (var watcher = new RefReaderWatcher())
+      using (var watcher = new RefReaderWatcher(true))
         return _readerInvoker(stream);
     }
 
