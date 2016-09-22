@@ -74,7 +74,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * 
    * // End
    * |-------------------------------------|
-   * | string = "Type end" - end of type   | 
+   * | string = TypeEndToken - end of type | 
    * |-------------------------------------|
    * 
    * <=============================================>
@@ -110,7 +110,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * 
    * // End
    * |-------------------------------------|
-   * | string = "Type end" - end of type   | 
+   * | string = TypeEndToken - end of type | 
    * |-------------------------------------|
    * 
    * <=============================================>
@@ -118,7 +118,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * <=============================================>
    * 
    * |-------------------------------------|
-   * | string = "Array"                    |
+   * | string = ArrayToken                 |
    * |-------------------------------------|
    * | string - element type Name          | 
    * |-------------------------------------|
@@ -160,7 +160,6 @@ namespace ThirtyNineEighty.BinarySerializer
 
     static SerializerBuilder()
     {
-      AddType<Type>();
       AddType<bool>();
       AddType<byte>();
       AddType<sbyte>();
