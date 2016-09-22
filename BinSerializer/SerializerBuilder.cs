@@ -231,7 +231,7 @@ namespace ThirtyNineEighty.BinarySerializer
         dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
-        throw new NotImplementedException($"DynamicMethod not bilded for type: { type }");
+        throw new NotImplementedException($"DynamicMethod not builded for type: { type }");
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -469,7 +469,7 @@ namespace ThirtyNineEighty.BinarySerializer
         dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
-        throw new NotImplementedException($"DynamicMethod not bilded for type: { type }");
+        throw new NotImplementedException($"DynamicMethod not builded for type: { type }");
 
       var il = dynamicMethod.GetILGenerator();
 
