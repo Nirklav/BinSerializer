@@ -306,7 +306,7 @@ namespace ThirtyNineEighty.BinarySerializer
         }
         else
         {
-          if (ch != ',')
+          if (ch != ',' || bracketCounter != 1)
             builder.Append(ch);
           else
           {

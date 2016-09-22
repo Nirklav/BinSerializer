@@ -154,25 +154,32 @@ namespace Tests
     }
 
     [Type("GenericType")]
-    class GenericType<T>
+    class GenericType<T1, T2>
     {
       [Field("a")]
-      public T Field;
+      public T1 FieldOne;
+
+      [Field("b")]
+      public T2 FieldTwo;
     }
     
     [TestMethod]
     public void GenericTypeTest()
     {
-      var input = new GenericType<GenericType<int>>();
-      input.Field = new GenericType<int>();
-      input.Field.Field = 500;
+      var input = new GenericType<GenericType<int, int>, int>();
+      input.FieldOne = new GenericType<int, int>();
+      input.FieldOne.FieldOne = 500;
+      input.FieldOne.FieldTwo = 300;
+      input.FieldTwo = 200;
 
       var stream = new MemoryStream();
       BinSerializer.Serialize(stream, input);
       stream.Position = 0;
-      var output = BinSerializer.Deserialize<GenericType<GenericType<int>>>(stream);
+      var output = BinSerializer.Deserialize<GenericType<GenericType<int, int>, int>>(stream);
 
-      Assert.AreEqual(input.Field.Field, output.Field.Field);
+      Assert.AreEqual(input.FieldOne.FieldOne, output.FieldOne.FieldOne);
+      Assert.AreEqual(input.FieldOne.FieldTwo, output.FieldOne.FieldTwo);
+      Assert.AreEqual(input.FieldTwo, output.FieldTwo);
     }
   }
 }
