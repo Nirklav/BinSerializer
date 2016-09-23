@@ -118,9 +118,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * <=============================================>
    * 
    * |-------------------------------------|
-   * | string = ArrayToken                 |
-   * |-------------------------------------|
-   * | string - element type Name          | 
+   * | string = ArrayToken[elementTypeId]  |
    * |-------------------------------------|
    * |                                     | 0 for null. 
    * | int - reference id                  | If reference is null it's be end of type.
@@ -344,14 +342,9 @@ namespace ThirtyNineEighty.BinarySerializer
 
       BSDebug.TraceStart(il, "Write " + type.Name);
 
-      // Write array token
-      il.Emit(OpCodes.Ldarg_0);
-      il.Emit(OpCodes.Ldstr, Types.ArrayToken);
-      il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
-
       // Write type
       il.Emit(OpCodes.Ldarg_0);
-      il.Emit(OpCodes.Ldstr, Types.GetTypeId(elementType));
+      il.Emit(OpCodes.Ldstr, Types.GetTypeId(type));
       il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
 
       // Write refId
@@ -637,7 +630,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static);
       var deserialize = typeof(BinSerializer).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
 
-      // array token and element type id already was readed
+      // array type id already was readed
 
       il.DeclareLocal(typeof(int)); // Ref id
       il.DeclareLocal(typeof(int)); // Array length

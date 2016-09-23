@@ -43,12 +43,17 @@ namespace ThirtyNineEighty.BinarySerializer
       '<', '>'
     };
 
+    // Types map
     private static readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
     private static readonly Dictionary<string, SerializerTypeInfo> _typesById = new Dictionary<string, SerializerTypeInfo>();
     private static readonly Dictionary<Type, SerializerTypeInfo> _typesByType = new Dictionary<Type, SerializerTypeInfo>();
 
+    // Runtime cache
     private static readonly ConcurrentDictionary<string, Type> _typeIdToTypeGenericCache = new ConcurrentDictionary<string, Type>();
     private static readonly ConcurrentDictionary<Type, string> _typeToTypeIdGenericCache = new ConcurrentDictionary<Type, string>();
+
+    private static readonly ConcurrentDictionary<string, Type> _typeIdToTypeArrayCache = new ConcurrentDictionary<string, Type>();
+    private static readonly ConcurrentDictionary<Type, string> _typeToTypeIdArrayCache = new ConcurrentDictionary<Type, string>();
 
     static Types()
     {
@@ -105,6 +110,11 @@ namespace ThirtyNineEighty.BinarySerializer
       _locker.EnterReadLock();
       try
       {
+        // Array can't be recursive
+        string arrayTypeId;
+        if (TryGetArrayTypeId(type, out arrayTypeId))
+          return arrayTypeId;
+
         return GetTypeIdImpl(type);
       }
       finally
@@ -128,6 +138,11 @@ namespace ThirtyNineEighty.BinarySerializer
       _locker.EnterReadLock();
       try
       {
+        // Array can't be recursive
+        Type arrayType;
+        if (TryGetArrayType(typeId, out arrayType))
+          return arrayType;
+
         return GetTypeImpl(typeId);
       }
       finally
@@ -172,6 +187,53 @@ namespace ThirtyNineEighty.BinarySerializer
       {
         _locker.ExitReadLock();
       }
+    }
+
+    // Must be called under lock
+    private static bool TryGetArrayType(string typeId, out Type type)
+    {
+      if (!typeId.StartsWith(ArrayToken))
+      {
+        type = null;
+        return false;
+      }
+
+      if (_typeIdToTypeArrayCache.TryGetValue(typeId, out type))
+        return true;
+
+      var elementTypeIdStartIdx = typeId.IndexOf('[');
+      var elementTypeId = typeId.Substring(elementTypeIdStartIdx + 1, typeId.Length - elementTypeIdStartIdx - 2);
+      var elementType = GetTypeImpl(elementTypeId);
+
+      type = elementType.MakeArrayType();
+      _typeIdToTypeArrayCache.TryAdd(typeId, type);
+      return true;
+    }
+
+    // Must be called under lock
+    private  static bool TryGetArrayTypeId(Type type, out string typeId)
+    {
+      if (!type.IsArray)
+      {
+        typeId = null;
+        return false;
+      }
+      
+      if (_typeToTypeIdArrayCache.TryGetValue(type, out typeId))
+        return true;
+
+      var elementType = type.GetElementType();
+      var elementTypeId = GetTypeIdImpl(elementType);
+
+      var builder = new StringBuilder();
+      builder.Append(ArrayToken);
+      builder.Append('[');
+      builder.Append(elementTypeId);
+      builder.Append(']');
+
+      typeId = builder.ToString();
+      _typeToTypeIdArrayCache.TryAdd(type, typeId);
+      return true;
     }
 
     // Must be called under lock

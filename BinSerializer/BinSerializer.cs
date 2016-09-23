@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -80,16 +79,7 @@ namespace ThirtyNineEighty.BinarySerializer
         BSDebug.TraceStart("Start read of ...");
 
         var typeId = stream.ReadString();
-
-        Type type;
-        if (!string.Equals(typeId, Types.ArrayToken, StringComparison.OrdinalIgnoreCase))
-          type = Types.GetType(typeId);
-        else
-        {
-          var arrayElementTypeId = stream.ReadString();
-          var arrayElementType = Types.GetType(arrayElementTypeId);
-          type = arrayElementType.MakeArrayType();
-        }
+        var type = Types.GetType(typeId);
 
         BSDebug.TraceStart("... " + type.Name);
 

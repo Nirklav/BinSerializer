@@ -18,6 +18,9 @@ namespace Tests
 
       [Field("c")]
       public NullTestType NullField;
+
+      [Field("d")]
+      public double DoubleField;
     }
     
     [TestMethod]
@@ -27,6 +30,7 @@ namespace Tests
       input.StrField = "str value";
       input.IntField = 255;
       input.NullField = null;
+      input.DoubleField = 50d;
 
       var stream = new MemoryStream();
       BinSerializer.Serialize(stream, input);
@@ -36,6 +40,7 @@ namespace Tests
       Assert.AreEqual(input.StrField, output.StrField);
       Assert.AreEqual(input.IntField, output.IntField);
       Assert.AreEqual(input.NullField, output.NullField);
+      Assert.AreEqual(input.DoubleField, output.DoubleField);
     }
 
     [Type("StructContainerType")]
@@ -150,6 +155,48 @@ namespace Tests
 
       for (int i = 0; i < input.ArrayField.Length; i++)
         Assert.AreEqual(input.ArrayField[i], output.ArrayField[i]);
+    }
+
+    [Type("ArrayType2")]
+    class ArrayType2
+    {
+      [Field("a")]
+      public ArrayElementType[] ArrayField;
+    }
+
+    [Type("ArrayElementType")]
+    public class ArrayElementType
+    {
+      [Field("a")]
+      public int Field;
+
+      public ArrayElementType(int f)
+      {
+        Field = f;
+      }
+    }
+
+    [TestMethod]
+    public void ArrayTest2()
+    {
+      var input = new ArrayType2();
+      input.ArrayField = new[]
+      {
+        new ArrayElementType(1),
+        new ArrayElementType(3),
+        new ArrayElementType(3),
+        new ArrayElementType(7)
+      };
+
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, input);
+      stream.Position = 0;
+      var output = BinSerializer.Deserialize<ArrayType2>(stream);
+
+      Assert.AreEqual(input.ArrayField.Length, output.ArrayField.Length);
+
+      for (int i = 0; i < input.ArrayField.Length; i++)
+        Assert.AreEqual(input.ArrayField[i].Field, output.ArrayField[i].Field);
     }
 
     [Type("GenericType")]
