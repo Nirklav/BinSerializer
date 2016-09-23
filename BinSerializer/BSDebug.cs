@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -7,55 +6,54 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   static class BSDebug
   {
-    private const string TraceFile = @"D:\trace.txt";
-
     [Conditional("DEBUG")]
     public static void TraceStart(string methodName)
     {
-      WriteImpl($"Type start { methodName }\r\n");
+      WriteImpl(string.Format("Type start {0}\r\n", methodName));
     }
 
     [Conditional("DEBUG")]
     public static void TraceEnd(string methodName)
     {
-      WriteImpl($"Type end { methodName }\r\n");
+      WriteImpl(string.Format("Type end {0}\r\n", methodName));
     }
 
     [Conditional("DEBUG")]
     public static void TraceStart(ILGenerator il, string methodName)
     {
-      Write(il, $"Type start { methodName }\r\n");
+      Write(il, string.Format("Type start {0}\r\n", methodName));
     }
 
     [Conditional("DEBUG")]
     public static void TraceEnd(ILGenerator il, string methodName)
     {
-      Write(il, $"Type end { methodName }\r\n");
+      Write(il, string.Format("Type end {0}\r\n", methodName));
     }
 
     [Conditional("DEBUG")]
     private static void Write(ILGenerator il, string text)
     {
       il.Emit(OpCodes.Ldstr, text);
-      il.Emit(OpCodes.Call, typeof(BSDebug).GetMethod(nameof(BSDebug.WriteImpl), BindingFlags.Static | BindingFlags.NonPublic));
+      il.Emit(OpCodes.Call, typeof(BSDebug).GetMethod("WriteImpl", BindingFlags.Static | BindingFlags.NonPublic));
     }
 
     [Conditional("DEBUG")]
     public static void TraceStart(string methodName, long pos)
     {
-      WriteImpl($"Start { methodName } stream pos { pos }\r\n");
+      WriteImpl(string.Format("Start {0} stream pos {1}\r\n", methodName, pos));
     }
 
     [Conditional("DEBUG")]
     public static void TraceEnd(string methodName, long pos)
     {
-      WriteImpl($"End { methodName } stream pos { pos }\r\n");
+      WriteImpl(string.Format("End {0} stream pos {1}\r\n", methodName, pos));
     }
 
     [Conditional("DEBUG")]
     private static void WriteImpl(string text)
     {
-      //File.AppendAllText(TraceFile, text);
+      //const string traceFile = @"D:\trace.txt";
+      //File.AppendAllText(traceFile, text);
     }
   }
 }

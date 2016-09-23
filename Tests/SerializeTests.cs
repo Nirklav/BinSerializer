@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.IO;
 using ThirtyNineEighty.BinarySerializer;
 
@@ -179,6 +178,32 @@ namespace Tests
 
       Assert.AreEqual(input.FieldOne.FieldOne, output.FieldOne.FieldOne);
       Assert.AreEqual(input.FieldOne.FieldTwo, output.FieldOne.FieldTwo);
+      Assert.AreEqual(input.FieldTwo, output.FieldTwo);
+    }
+
+    [Type("SimpleTypesRefTestType")]
+    class SimpleTypesRefTestType
+    {
+      [Field("a")]
+      public string FieldOne;
+
+      [Field("b")]
+      public string FieldTwo;
+    }
+
+    [TestMethod]
+    public void SimpleTypesRefTest()
+    {
+      var input = new SimpleTypesRefTestType();
+      input.FieldOne = "asdasdasdasd";
+      input.FieldTwo = "asdasdasdasd";
+
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, input);
+      stream.Position = 0;
+      var output = BinSerializer.Deserialize<SimpleTypesRefTestType>(stream);
+
+      Assert.AreEqual(input.FieldOne, output.FieldOne);
       Assert.AreEqual(input.FieldTwo, output.FieldTwo);
     }
   }

@@ -66,7 +66,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static void AddTypeImpl(Type type, string id, int version, int minSupportedVersion)
     {
       if (_reservedIds.Contains(id))
-        throw new ArgumentException($"This id reserved by serializer { id }.");
+        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", id));
 
       if (type.IsGenericType && !type.IsGenericTypeDefinition)
         throw new ArgumentException("Only opened generic types can be registered.");
@@ -78,10 +78,10 @@ namespace ThirtyNineEighty.BinarySerializer
       var typeInfo = new SerializerTypeInfo(type, id, version, minSupportedVersion);
 
       if (_typesById.ContainsKey(typeInfo.Id))
-        throw new InvalidOperationException($"TypeInfo with this id already exist { typeInfo.Id } by type { typeInfo.Type }.");
+        throw new InvalidOperationException(string.Format("TypeInfo with this id already exist {0} by type {1}.", typeInfo.Id, typeInfo.Type));
 
       if (_typesByType.ContainsKey(typeInfo.Type))
-        throw new InvalidOperationException($"TypeInfo with this Type already exist { typeInfo.Type } by id { typeInfo.Id }.");
+        throw new InvalidOperationException(string.Format("TypeInfo with this Type already exist {0} by id {1}.",  typeInfo.Type, typeInfo.Id));
 
       _typesById.Add(id, typeInfo);
       _typesByType.Add(type, typeInfo);
@@ -223,7 +223,7 @@ namespace ThirtyNineEighty.BinarySerializer
         return typeInfo.Id;
 
       if (type.ContainsGenericParameters)
-        throw new ArgumentException($"{ type } conatins generic parameters.");
+        throw new ArgumentException(string.Format("{0} conatins generic parameters.", type));
 
       var builder = new StringBuilder();
       builder.Append(typeInfo.Id);

@@ -231,7 +231,7 @@ namespace ThirtyNineEighty.BinarySerializer
         dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
-        throw new NotImplementedException($"DynamicMethod not builded for type: { type }");
+        throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -245,7 +245,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     private static void CreateObjectWriter(ILGenerator il, Type type)
     {
-      var getRefId = typeof(RefWriterWatcher).GetMethod(nameof(RefWriterWatcher.GetRefId), BindingFlags.Public | BindingFlags.Static);
+      var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
 
       il.DeclareLocal(typeof(bool));
 
@@ -300,7 +300,7 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
 
           var serialize = typeof(BinSerializer)
-            .GetMethod(nameof(BinSerializer.Serialize), BindingFlags.Static | BindingFlags.Public)
+            .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public)
             .MakeGenericMethod(field.FieldType);
 
           // Write field
@@ -329,9 +329,9 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var elementType = type.GetElementType();
 
-      var getRefId = typeof(RefWriterWatcher).GetMethod(nameof(RefWriterWatcher.GetRefId), BindingFlags.Public | BindingFlags.Static);
-      var getLowerBound = typeof(Array).GetMethod(nameof(Array.GetLowerBound), BindingFlags.Instance | BindingFlags.Public);
-      var serialize = typeof(BinSerializer).GetMethod(nameof(BinSerializer.Serialize), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
+      var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
+      var getLowerBound = typeof(Array).GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
+      var serialize = typeof(BinSerializer).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
 
       il.DeclareLocal(typeof(int)); // Array length
       il.DeclareLocal(typeof(int)); // Array index
@@ -469,7 +469,7 @@ namespace ThirtyNineEighty.BinarySerializer
         dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
-        throw new NotImplementedException($"DynamicMethod not builded for type: { type }");
+        throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -483,11 +483,11 @@ namespace ThirtyNineEighty.BinarySerializer
 
     private static void CreateObjectReader(ILGenerator il, Type type)
     {
-      var addRef = typeof(RefReaderWatcher).GetMethod(nameof(RefReaderWatcher.AddRef), BindingFlags.Public | BindingFlags.Static);
-      var tryGetRef = typeof(RefReaderWatcher).GetMethod(nameof(RefReaderWatcher.TryGetRef), BindingFlags.Public | BindingFlags.Static);
-      var getTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
-      var getUninitializedObject = typeof(FormatterServices).GetMethod(nameof(FormatterServices.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
-      var dynamicObjectRead = typeof(SerializerBuilder).GetMethod(nameof(SerializerBuilder.DynamicObjectRead), BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(type);
+      var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static);
+      var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static);
+      var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
+      var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
+      var dynamicObjectRead = typeof(SerializerBuilder).GetMethod("DynamicObjectRead", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(type);
 
       il.DeclareLocal(typeof(int));
       il.DeclareLocal(type);
@@ -496,7 +496,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var readVersionLabel = il.DefineLabel();
       var readFastLabel = il.DefineLabel();
 
-      // Type readed before for references
+      // Type readed before only for references
       if (type.IsValueType)
       {
         // Skip type for value types
@@ -553,9 +553,18 @@ namespace ThirtyNineEighty.BinarySerializer
       MethodInfo reader;
       if (_streamReaders.TryGetValue(type, out reader))
       {
+        // Read
         il.Emit(OpCodes.Ldarg_0); // Load stream
         il.Emit(OpCodes.Call, reader);
         il.Emit(OpCodes.Stloc_1); // Set result to local
+
+        // Add reference to watcher
+        if (type.IsClass)
+        {
+          il.Emit(OpCodes.Ldloc_0); // Load reference id
+          il.Emit(OpCodes.Ldloc_1); // Load result object reference
+          il.Emit(OpCodes.Call, addRef);
+        }
       }
       else
       {
@@ -589,7 +598,7 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, _streamSkipers[typeof(string)]);
 
           var deserialize = typeof(BinSerializer)
-            .GetMethod(nameof(BinSerializer.Deserialize), BindingFlags.Static | BindingFlags.Public)
+            .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public)
             .MakeGenericMethod(field.FieldType);
 
           // Prepeare stack to field set
@@ -624,9 +633,9 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var elementType = type.GetElementType();
 
-      var addRef = typeof(RefReaderWatcher).GetMethod(nameof(RefReaderWatcher.AddRef), BindingFlags.Public | BindingFlags.Static);
-      var tryGetRef = typeof(RefReaderWatcher).GetMethod(nameof(RefReaderWatcher.TryGetRef), BindingFlags.Public | BindingFlags.Static);
-      var deserialize = typeof(BinSerializer).GetMethod(nameof(BinSerializer.Deserialize), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
+      var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static);
+      var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static);
+      var deserialize = typeof(BinSerializer).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
 
       // array token and element type id already was readed
 
