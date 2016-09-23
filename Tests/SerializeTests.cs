@@ -43,6 +43,32 @@ namespace Tests
       Assert.AreEqual(input.DoubleField, output.DoubleField);
     }
 
+    [Type("FullNullTestType")]
+    class FullNullTestType
+    {
+      [Field("a")]
+      public string StrFieldOne;
+
+      [Field("b")]
+      public string StrFieldTwo;
+    }
+
+    [TestMethod]
+    public void FullNullTest()
+    {
+      var input = new FullNullTestType();
+
+      using (var stream = File.Create(@"D:\file.bin"))
+      {
+        BinSerializer.Serialize(stream, input);
+        stream.Position = 0;
+        var output = BinSerializer.Deserialize<FullNullTestType>(stream);
+
+        Assert.AreEqual(output.StrFieldOne, null);
+        Assert.AreEqual(output.StrFieldOne, null);
+      }
+    }
+
     [Type("StructContainerType")]
     class StructContainerType
     {

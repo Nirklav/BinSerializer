@@ -55,7 +55,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * | int - written type version          |
    * |-------------------------------------|
    * 
-   * // Fields
+   * // Fields (if field is null nothing will be written)
    * |-------------------------------------|
    * | string - field id                   |
    * |-------------------------------------|
@@ -91,7 +91,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * | int - written type version          |
    * |-------------------------------------|
    * 
-   * // Fields
+   * // Fields (if field is null nothing will be written)
    * |-------------------------------------|
    * | string - field id                   |
    * |-------------------------------------|
@@ -223,7 +223,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       if (type.IsValueType)
         dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), type }, type, true);
-      if (type.IsClass && !type.IsArray)
+      if (!type.IsValueType && !type.IsArray)
         dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type, true);
       if (type.IsArray)
         dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
@@ -247,7 +247,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       il.DeclareLocal(typeof(bool));
 
-      var skipLabel = il.DefineLabel();
+      var skipTypeLabel = il.DefineLabel();
 
       BSDebug.TraceStart(il, "Write " + type.Name);
 
@@ -256,7 +256,7 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Ldstr, Types.GetTypeId(type));
       il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
 
-      if (type.IsClass)
+      if (!type.IsValueType)
       {
         // Write refId
         il.Emit(OpCodes.Ldarg_0);         // Load stream
@@ -268,7 +268,7 @@ namespace ThirtyNineEighty.BinarySerializer
         // Check case when reference type already serialized.
         // If null be returned then created flag be zero too and serialization will be skipped.
         il.Emit(OpCodes.Ldloc_0);
-        il.Emit(OpCodes.Brfalse, skipLabel);
+        il.Emit(OpCodes.Brfalse, skipTypeLabel);
       }
 
       // Write type version
@@ -290,7 +290,16 @@ namespace ThirtyNineEighty.BinarySerializer
       {
         foreach (var field in GetFields(type))
         {
+          var skipFieldLabel = il.DefineLabel();
           var fieldAttribute = field.GetCustomAttribute<FieldAttribute>(false);
+
+          // If field is null then skip it
+          if (!field.FieldType.IsValueType)
+          {
+            il.Emit(OpCodes.Ldarg_1);                 // Load object
+            il.Emit(OpCodes.Ldfld, field);            // Read field form object
+            il.Emit(OpCodes.Brfalse, skipFieldLabel); // Skip if field is null
+          }
 
           // Write field id
           il.Emit(OpCodes.Ldarg_0);
@@ -302,20 +311,23 @@ namespace ThirtyNineEighty.BinarySerializer
             .MakeGenericMethod(field.FieldType);
 
           // Write field
-          il.Emit(OpCodes.Ldarg_0);
-          il.Emit(OpCodes.Ldarg_1);
-          il.Emit(OpCodes.Ldfld, field);
-          il.Emit(OpCodes.Call, serialize);
+          il.Emit(OpCodes.Ldarg_0);         // Load stream
+          il.Emit(OpCodes.Ldarg_1);         // Load object
+          il.Emit(OpCodes.Ldfld, field);    // Read field from object
+          il.Emit(OpCodes.Call, serialize); // Write field value
+
+          // Skip field label
+          il.MarkLabel(skipFieldLabel);
         }
 
         // Write end id
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldstr, Types.TypeEndToken);
-        il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
+        il.Emit(OpCodes.Call, _streamWriters[typeof(string)]); 
       }
 
-      // Skipped
-      il.MarkLabel(skipLabel);
+      // Skip type label
+      il.MarkLabel(skipTypeLabel);
 
       BSDebug.TraceEnd(il, "Write " + type.Name);
 
@@ -456,7 +468,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       if (type.IsValueType)
         dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), type, new[] { typeof(Stream) }, type, true);
-      if (type.IsClass && !type.IsArray)
+      if (!type.IsValueType && !type.IsArray)
         dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type, true);
       if (type.IsArray)
         dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
@@ -481,9 +493,11 @@ namespace ThirtyNineEighty.BinarySerializer
       var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
       var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
       var dynamicObjectRead = typeof(SerializerBuilder).GetMethod("DynamicObjectRead", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(type);
+      var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
 
       il.DeclareLocal(typeof(int));
       il.DeclareLocal(type);
+      il.DeclareLocal(typeof(string));
 
       var resultLabel = il.DefineLabel();
       var readVersionLabel = il.DefineLabel();
@@ -498,7 +512,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
 
       // Process reference id
-      if (type.IsClass)
+      if (!type.IsValueType)
       {
         var tryLoadReferenceLabel = il.DefineLabel();
 
@@ -552,7 +566,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Stloc_1); // Set result to local
 
         // Add reference to watcher
-        if (type.IsClass)
+        if (!type.IsValueType)
         {
           il.Emit(OpCodes.Ldloc_0); // Load reference id
           il.Emit(OpCodes.Ldloc_1); // Load result object reference
@@ -576,19 +590,42 @@ namespace ThirtyNineEighty.BinarySerializer
         }
 
         // Add reference to watcher
-        if (type.IsClass)
+        if (!type.IsValueType)
         {
           il.Emit(OpCodes.Ldloc_0); // Load reference id
           il.Emit(OpCodes.Ldloc_1); // Load result object reference
           il.Emit(OpCodes.Call, addRef);
         }
-        
+
         // Read fields
+        Label? nextFieldLabel = null;
+
         foreach (var field in GetFields(type))
         {
-          // Skip field id
-          il.Emit(OpCodes.Ldarg_0); // Load stream
-          il.Emit(OpCodes.Call, _streamSkipers[typeof(string)]);
+          var fieldAttribute = field.GetCustomAttribute<FieldAttribute>(false);
+
+          var markCurrent = nextFieldLabel != null;
+          if (nextFieldLabel == null)
+            nextFieldLabel = il.DefineLabel();
+
+          // Read field id
+          il.Emit(OpCodes.Ldarg_0);                              // Load stream
+          il.Emit(OpCodes.Call, _streamReaders[typeof(string)]); // Read field id
+          il.Emit(OpCodes.Stloc_2);                              // Save last readed field id
+
+          // Mark next field label only after field read
+          if (markCurrent)
+          {
+            il.MarkLabel(nextFieldLabel.Value);
+            nextFieldLabel = il.DefineLabel();
+          }
+
+          // Compare field ids, if it not equals then skip read
+          il.Emit(OpCodes.Ldloc_2);                                        // Load readed field id
+          il.Emit(OpCodes.Ldstr, fieldAttribute.Id);                       // Load field id 
+          il.Emit(OpCodes.Ldc_I4, (int)StringComparison.InvariantCulture); // Load comparsion type
+          il.Emit(OpCodes.Call, stringEquals);                             // Compare
+          il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);                  // These aren't the field your looking for
 
           var deserialize = typeof(BinSerializer)
             .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public)
@@ -607,6 +644,10 @@ namespace ThirtyNineEighty.BinarySerializer
           // Set field
           il.Emit(OpCodes.Stfld, field);
         }
+
+        // Mark jump (for last field)
+        if (nextFieldLabel != null)
+          il.MarkLabel(nextFieldLabel.Value);
 
         // Skip end
         il.Emit(OpCodes.Ldarg_0);

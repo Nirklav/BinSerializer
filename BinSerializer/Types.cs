@@ -9,10 +9,6 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   public static class Types
   {
-    public const string NullToken = "nil";
-    public const string TypeEndToken = "end";
-    public const string ArrayToken = "arr";
-
     private class SerializerTypeInfo
     {
       public readonly TypeInfo Type;
@@ -28,6 +24,10 @@ namespace ThirtyNineEighty.BinarySerializer
         MinSupportedVersion = minSupportedVersion;
       }
     }
+
+    public const string NullToken = "nil";
+    public const string TypeEndToken = "end";
+    public const string ArrayToken = "arr";
 
     private static readonly HashSet<string> _reservedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {

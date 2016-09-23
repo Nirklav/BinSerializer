@@ -57,6 +57,7 @@ namespace ThirtyNineEighty.BinarySerializer
       if (_isRoot)
       {
         _refIds.Clear();
+        _lastRefId = 0;
         _rootCreated = false;
       }
     }
