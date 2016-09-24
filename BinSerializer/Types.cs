@@ -12,16 +12,24 @@ namespace ThirtyNineEighty.BinarySerializer
     private class SerializerTypeInfo
     {
       public readonly TypeInfo Type;
-      public readonly string Id;
+      public readonly string TypeId;
       public readonly int Version;
       public readonly int MinSupportedVersion;
+
+      public readonly MethodInfo Writer;
+      public readonly MethodInfo Reader;
+      public readonly MethodInfo Skiper;
       
-      public SerializerTypeInfo(Type type, string id, int version, int minSupportedVersion)
+      public SerializerTypeInfo(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader, MethodInfo skiper)
       {
         Type = type.GetTypeInfo();
-        Id = id;
+        TypeId = typeId;
         Version = version;
         MinSupportedVersion = minSupportedVersion;
+
+        Writer = writer;
+        Reader = reader;
+        Skiper = skiper;
       }
     }
 
@@ -57,47 +65,97 @@ namespace ThirtyNineEighty.BinarySerializer
 
     static Types()
     {
+      AddType<bool>();
+      AddType<byte>();
+      AddType<sbyte>();
+      AddType<short>();
+      AddType<ushort>();
+      AddType<char>();
+      AddType<int>();
+      AddType<uint>();
+      AddType<long>();
+      AddType<ulong>();
+      AddType<float>();
+      AddType<double>();
+      AddType<decimal>();
+      AddType<string>();
+      AddType<DateTime>();
+
+      AddUserDefinedTypes();
+    }
+
+    private static void AddType<T>()
+    {
+      var type = typeof(T);
+      MethodInfo reader = null;
+      MethodInfo writer = null;
+      MethodInfo skiper = null;
+
+      foreach (var method in typeof(StreamExtensions).GetMethods())
+      {
+        var attrib = method.GetCustomAttribute<StreamExtensionAttribute>(false);
+        if (attrib == null || attrib.Type != type)
+          continue;
+
+        switch (attrib.Kind)
+        {
+          case StreamExtensionKind.Read: reader = method; break;
+          case StreamExtensionKind.Write: writer = method; break;
+          case StreamExtensionKind.Skip: skiper = method; break;
+        }
+      }
+
+      AddTypeImpl(type, type.Name, 0, 0, writer, reader, skiper);
+    }
+
+    private static void AddUserDefinedTypes()
+    {
       foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
       {
         foreach (var type in assembly.DefinedTypes)
         {
           var attribute = type.GetCustomAttribute<TypeAttribute>(false);
           if (attribute != null)
-            AddTypeImpl(type, attribute.Id, attribute.Version, attribute.MinSupportedVersion);
+            AddTypeImpl(type, attribute.Id, attribute.Version, attribute.MinSupportedVersion, null, null, null);
         }
       }
     }
 
-    private static void AddTypeImpl(Type type, string id, int version, int minSupportedVersion)
+    private static void AddTypeImpl(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader, MethodInfo skiper)
     {
-      if (_reservedIds.Contains(id))
-        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", id));
+      if (_reservedIds.Contains(typeId))
+        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
 
       if (type.IsGenericType && !type.IsGenericTypeDefinition)
         throw new ArgumentException("Only opened generic types can be registered.");
 
-      foreach (var ch in id)
+      foreach (var ch in typeId)
         if (_reservedChars.Contains(ch))
           throw new ArgumentException("Id contains reserved symbols '[',']','(',')','<','>'.");
 
-      var typeInfo = new SerializerTypeInfo(type, id, version, minSupportedVersion);
+      var typeInfo = new SerializerTypeInfo(type, typeId, version, minSupportedVersion, writer, reader, skiper);
 
-      if (_typesById.ContainsKey(typeInfo.Id))
-        throw new InvalidOperationException(string.Format("TypeInfo with this id already exist {0} by type {1}.", typeInfo.Id, typeInfo.Type));
+      if (_typesById.ContainsKey(typeInfo.TypeId))
+        throw new InvalidOperationException(string.Format("TypeInfo with this id already exist {0} by type {1}.", typeInfo.TypeId, typeInfo.Type));
 
       if (_typesByType.ContainsKey(typeInfo.Type))
-        throw new InvalidOperationException(string.Format("TypeInfo with this Type already exist {0} by id {1}.",  typeInfo.Type, typeInfo.Id));
+        throw new InvalidOperationException(string.Format("TypeInfo with this Type already exist {0} by id {1}.",  typeInfo.Type, typeInfo.TypeId));
 
-      _typesById.Add(id, typeInfo);
+      _typesById.Add(typeId, typeInfo);
       _typesByType.Add(type, typeInfo);
     }
 
-    public static void AddType(Type type, string id, int version, int minSupportedVersion)
+    public static void AddType(Type type, string typeId, int version, int minSppportedVersion)
+    {
+      AddType(type, typeId, version, minSppportedVersion, null, null);
+    }
+
+    public static void AddType(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader)
     {
       _locker.EnterWriteLock();
       try
       {
-        AddTypeImpl(type, id, version, minSupportedVersion);
+        AddTypeImpl(type, typeId, version, minSupportedVersion, writer, reader, null);
       }
       finally
       {
@@ -105,7 +163,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
-    public static string GetTypeId(Type type)
+    internal static string GetTypeId(Type type)
     {
       _locker.EnterReadLock();
       try
@@ -123,6 +181,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    // Must be called read under lock
     private static string GetTypeIdImpl(Type type)
     {
       string genericTypeId;
@@ -151,6 +210,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    // Must be called read under lock
     private static Type GetTypeImpl(string typeId)
     {
       Type genericType;
@@ -161,7 +221,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return BuildType(info, typeId);
     }
 
-    public static int GetVersion(Type type)
+    internal static int GetVersion(Type type)
     {
       _locker.EnterReadLock();
       try
@@ -175,7 +235,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
-    public static int GetMinSupported(Type type)
+    internal static int GetMinSupported(Type type)
     {
       _locker.EnterReadLock();
       try
@@ -189,7 +249,49 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
-    // Must be called under lock
+    internal static MethodInfo TryGetWriter(Type type)
+    {
+      _locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.Writer;
+      }
+      finally
+      {
+        _locker.ExitReadLock();
+      }
+    }
+
+    internal static MethodInfo TryGetReader(Type type)
+    {
+      _locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.Reader;
+      }
+      finally
+      {
+        _locker.ExitReadLock();
+      }
+    }
+
+    internal static MethodInfo TryGetSkiper(Type type)
+    {
+      _locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.Skiper;
+      }
+      finally
+      {
+        _locker.ExitReadLock();
+      }
+    }
+
+    // Must be called read under lock
     private static bool TryGetArrayType(string typeId, out Type type)
     {
       if (!typeId.StartsWith(ArrayToken))
@@ -210,8 +312,8 @@ namespace ThirtyNineEighty.BinarySerializer
       return true;
     }
 
-    // Must be called under lock
-    private  static bool TryGetArrayTypeId(Type type, out string typeId)
+    // Must be called read under lock
+    private static bool TryGetArrayTypeId(Type type, out string typeId)
     {
       if (!type.IsArray)
       {
@@ -236,7 +338,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return true;
     }
 
-    // Must be called under lock
+    // Must be called read under lock
     private static SerializerTypeInfo GetTypeInfo(Type type)
     {
       var normalizedType = Normalize(type);
@@ -246,7 +348,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return info;
     }
 
-    // Must be called under lock
+    // Must be called read under lock
     private static SerializerTypeInfo GetTypeInfo(string typeId)
     {
       var normalizedTypeId = Normalize(typeId);
@@ -256,7 +358,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return info;
     }
 
-    // Must be called under lock
+    // Must be called read under lock
     private static Type BuildType(SerializerTypeInfo typeInfo, string typeId)
     {
       if (!IsGenericTypeId(typeId))
@@ -278,17 +380,17 @@ namespace ThirtyNineEighty.BinarySerializer
       return resultType;
     }
 
-    // Must be called under lock
+    // Must be called read under lock
     private static string BuildTypeId(SerializerTypeInfo typeInfo, Type type)
     {
       if (!type.IsGenericType || type.IsGenericTypeDefinition)
-        return typeInfo.Id;
+        return typeInfo.TypeId;
 
       if (type.ContainsGenericParameters)
         throw new ArgumentException(string.Format("{0} conatins generic parameters.", type));
 
       var builder = new StringBuilder();
-      builder.Append(typeInfo.Id);
+      builder.Append(typeInfo.TypeId);
       builder.Append('[');
 
       var argumentsCount = type.GenericTypeArguments.Length;
@@ -314,10 +416,13 @@ namespace ThirtyNineEighty.BinarySerializer
     
     private static Type Normalize(Type type)
     {
-      if (!type.IsGenericType || type.IsGenericTypeDefinition)
-        return type;
+      if (type.IsEnum)
+        return Enum.GetUnderlyingType(type);
 
-      return type.GetGenericTypeDefinition();
+      if (type.IsGenericType && !type.IsGenericTypeDefinition)
+        return type.GetGenericTypeDefinition();
+
+      return type;
     }
 
     private static string Normalize(string typeId)

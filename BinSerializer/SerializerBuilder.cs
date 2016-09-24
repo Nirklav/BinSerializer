@@ -152,50 +152,6 @@ namespace ThirtyNineEighty.BinarySerializer
     private static readonly ConcurrentDictionary<Type, Delegate> _writersT = new ConcurrentDictionary<Type, Delegate>();
     private static readonly ConcurrentDictionary<Type, Delegate> _readersT = new ConcurrentDictionary<Type, Delegate>();
 
-    private static readonly Dictionary<Type, MethodInfo> _streamWriters = new Dictionary<Type, MethodInfo>();
-    private static readonly Dictionary<Type, MethodInfo> _streamReaders = new Dictionary<Type, MethodInfo>();
-    private static readonly Dictionary<Type, MethodInfo> _streamSkipers = new Dictionary<Type, MethodInfo>();
-
-    static SerializerBuilder()
-    {
-      AddType<bool>();
-      AddType<byte>();
-      AddType<sbyte>();
-      AddType<short>();
-      AddType<ushort>();
-      AddType<char>();
-      AddType<int>();
-      AddType<uint>();
-      AddType<long>();
-      AddType<ulong>();
-      AddType<float>();
-      AddType<double>();
-      AddType<decimal>();
-      AddType<string>();
-      AddType<DateTime>();
-    }
-
-    private static void AddType<T>()
-    {
-      var type = typeof(T);
-
-      Types.AddType(type, type.Name, 0, 0);
-
-      foreach (var method in typeof(StreamExtensions).GetMethods())
-      {
-        var attrib = method.GetCustomAttribute<StreamExtensionAttribute>(false);
-        if (attrib == null || attrib.Type != type)
-          continue;
-
-        switch (attrib.Kind)
-        {
-          case StreamExtensionKind.Read:  _streamReaders.Add(attrib.Type, method); break;
-          case StreamExtensionKind.Write: _streamWriters.Add(attrib.Type, method); break;
-          case StreamExtensionKind.Skip:  _streamSkipers.Add(attrib.Type, method); break;
-        }
-      }
-    }
-
     #region writer
     // Only for refs
     public static Writer GetWriter(Type type)
@@ -221,12 +177,13 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       DynamicMethod dynamicMethod = null;
 
+      var methodName = string.Format("{0}_writer", type);
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), type }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, type, true);
       if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), typeof(object) }, type, true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_writer", type), typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), typeof(object) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
@@ -254,7 +211,7 @@ namespace ThirtyNineEighty.BinarySerializer
       // Write type
       il.Emit(OpCodes.Ldarg_0);
       il.Emit(OpCodes.Ldstr, Types.GetTypeId(type));
-      il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
+      il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string)));
 
       if (!type.IsValueType)
       {
@@ -263,7 +220,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Ldarg_1);         // Load obj
         il.Emit(OpCodes.Ldloca_S, 0);     // Load address of bool local
         il.Emit(OpCodes.Call, getRefId);  // Obj => RefId
-        il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
+        il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
         // Check case when reference type already serialized.
         // If null be returned then created flag be zero too and serialization will be skipped.
@@ -276,11 +233,11 @@ namespace ThirtyNineEighty.BinarySerializer
 
       il.Emit(OpCodes.Ldarg_0);         // Load stream
       il.Emit(OpCodes.Ldc_I4, version); // Load version
-      il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
+      il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
       // If writer exist then just write
-      MethodInfo writer;
-      if (_streamWriters.TryGetValue(type, out writer))
+      var writer = Types.TryGetWriter(type);
+      if (writer != null)
       {
         il.Emit(OpCodes.Ldarg_0);      // Load stream
         il.Emit(OpCodes.Ldarg_1);      // Load obj
@@ -304,7 +261,7 @@ namespace ThirtyNineEighty.BinarySerializer
           // Write field id
           il.Emit(OpCodes.Ldarg_0);
           il.Emit(OpCodes.Ldstr, fieldAttribute.Id);
-          il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
+          il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string)));
 
           var serialize = typeof(BinSerializer)
             .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public)
@@ -323,7 +280,7 @@ namespace ThirtyNineEighty.BinarySerializer
         // Write end id
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldstr, Types.TypeEndToken);
-        il.Emit(OpCodes.Call, _streamWriters[typeof(string)]); 
+        il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string))); 
       }
 
       // Skip type label
@@ -343,8 +300,8 @@ namespace ThirtyNineEighty.BinarySerializer
       var getLowerBound = typeof(Array).GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
       var serialize = typeof(BinSerializer).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
 
-      il.DeclareLocal(typeof(int)); // Array length
-      il.DeclareLocal(typeof(int)); // Array index
+      il.DeclareLocal(typeof(int));  // Array length
+      il.DeclareLocal(typeof(int));  // Array index
       il.DeclareLocal(typeof(bool)); // Ref id created flag
 
       var skipLabel = il.DefineLabel();
@@ -357,14 +314,14 @@ namespace ThirtyNineEighty.BinarySerializer
       // Write type
       il.Emit(OpCodes.Ldarg_0);
       il.Emit(OpCodes.Ldstr, Types.GetTypeId(type));
-      il.Emit(OpCodes.Call, _streamWriters[typeof(string)]);
+      il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string)));
 
       // Write refId
       il.Emit(OpCodes.Ldarg_0);         // Load stream
       il.Emit(OpCodes.Ldarg_1);         // Load obj
       il.Emit(OpCodes.Ldloca_S, 2);     // Load address of bool local
       il.Emit(OpCodes.Call, getRefId);  // Obj => RefId
-      il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
+      il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
       // Check case when reference type already serialized.
       // If null be returned then created flag be zero too and serialization will be skipped.
@@ -390,7 +347,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Ldarg_0); // Load stream
         il.Emit(OpCodes.Ldarg_1); // Load array
         il.Emit(OpCodes.Ldlen);   // Load array length
-        il.Emit(OpCodes.Call, _streamWriters[typeof(int)]);
+        il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
         // Set array length
         il.Emit(OpCodes.Ldarg_1); // Load array
@@ -466,12 +423,13 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       DynamicMethod dynamicMethod = null;
 
+      var methodName = string.Format("{0}_reader", type);
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), type, new[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, type, true);
       if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(object), new[] { typeof(Stream) }, type, true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(string.Format("{0}_reader", type), typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(object), new[] { typeof(Stream) }, type.GetElementType(), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
@@ -507,8 +465,8 @@ namespace ThirtyNineEighty.BinarySerializer
       if (type.IsValueType)
       {
         // Skip type for value types
-        il.Emit(OpCodes.Ldarg_0);                              // Load stream
-        il.Emit(OpCodes.Call, _streamSkipers[typeof(string)]); // Skip type
+        il.Emit(OpCodes.Ldarg_0);                                  // Load stream
+        il.Emit(OpCodes.Call, Types.TryGetSkiper(typeof(string))); // Skip type
       }
 
       // Process reference id
@@ -517,10 +475,10 @@ namespace ThirtyNineEighty.BinarySerializer
         var tryLoadReferenceLabel = il.DefineLabel();
 
         // Read reference id
-        il.Emit(OpCodes.Ldarg_0);                           // Load stream
-        il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read ref id
-        il.Emit(OpCodes.Dup);                               // Duplicate ref id
-        il.Emit(OpCodes.Stloc_0);                           // Set ref id to local
+        il.Emit(OpCodes.Ldarg_0);                               // Load stream
+        il.Emit(OpCodes.Call, Types.TryGetReader(typeof(int))); // Read ref id
+        il.Emit(OpCodes.Dup);                                   // Duplicate ref id
+        il.Emit(OpCodes.Stloc_0);                               // Set ref id to local
 
         // Check if result null
         il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel);     // Check if null was written
@@ -544,9 +502,9 @@ namespace ThirtyNineEighty.BinarySerializer
       var version = Types.GetVersion(type);
 
       // Compare versions
-      il.Emit(OpCodes.Ldc_I4, version);                   // Load program type version 
-      il.Emit(OpCodes.Ldarg_0);                           // Load stream
-      il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read saved version
+      il.Emit(OpCodes.Ldc_I4, version);                       // Load program type version 
+      il.Emit(OpCodes.Ldarg_0);                               // Load stream
+      il.Emit(OpCodes.Call, Types.TryGetReader(typeof(int))); // Read saved version
       il.Emit(OpCodes.Beq, readFastLabel);
 
       // Call dynamic read if versions not equal
@@ -557,8 +515,8 @@ namespace ThirtyNineEighty.BinarySerializer
 
       il.MarkLabel(readFastLabel);
 
-      MethodInfo reader;
-      if (_streamReaders.TryGetValue(type, out reader))
+      var reader = Types.TryGetReader(type);
+      if (reader != null)
       {
         // Read
         il.Emit(OpCodes.Ldarg_0); // Load stream
@@ -609,9 +567,9 @@ namespace ThirtyNineEighty.BinarySerializer
             nextFieldLabel = il.DefineLabel();
 
           // Read field id
-          il.Emit(OpCodes.Ldarg_0);                              // Load stream
-          il.Emit(OpCodes.Call, _streamReaders[typeof(string)]); // Read field id
-          il.Emit(OpCodes.Stloc_2);                              // Save last readed field id
+          il.Emit(OpCodes.Ldarg_0);                                  // Load stream
+          il.Emit(OpCodes.Call, Types.TryGetReader(typeof(string))); // Read field id
+          il.Emit(OpCodes.Stloc_2);                                  // Save last readed field id
 
           // Mark next field label only after field read
           if (markCurrent)
@@ -651,7 +609,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
         // Skip end
         il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Call, _streamSkipers[typeof(string)]);
+        il.Emit(OpCodes.Call, Types.TryGetSkiper(typeof(string)));
       }
 
       // Return result
@@ -683,13 +641,13 @@ namespace ThirtyNineEighty.BinarySerializer
       var tryLoadReferenceLabel = il.DefineLabel();
 
       // Read reference id
-      il.Emit(OpCodes.Ldarg_0);                           // Load stream
-      il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read ref id
-      il.Emit(OpCodes.Dup);                               // Duplicate ref id
-      il.Emit(OpCodes.Stloc_0);                           // Set ref id to local
+      il.Emit(OpCodes.Ldarg_0);                               // Load stream
+      il.Emit(OpCodes.Call, Types.TryGetReader(typeof(int))); // Read ref id
+      il.Emit(OpCodes.Dup);                                   // Duplicate ref id
+      il.Emit(OpCodes.Stloc_0);                               // Set ref id to local
 
       // Check if result null
-      il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel);     // Check if null was written
+      il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel); // Check if null was written
 
       // Null was written (return null)
       il.Emit(OpCodes.Ldnull);
@@ -704,13 +662,13 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
 
       // Read array length
-      il.Emit(OpCodes.Ldarg_0);                           // Load stream
-      il.Emit(OpCodes.Call, _streamReaders[typeof(int)]); // Read length
-      il.Emit(OpCodes.Stloc_1);                           // Set array length
+      il.Emit(OpCodes.Ldarg_0);                               // Load stream
+      il.Emit(OpCodes.Call, Types.TryGetReader(typeof(int))); // Read length
+      il.Emit(OpCodes.Stloc_1);                               // Set array length
 
       // Set current index
-      il.Emit(OpCodes.Ldc_I4_0);                          // Load zero
-      il.Emit(OpCodes.Stloc_2);                           // Set current index
+      il.Emit(OpCodes.Ldc_I4_0); // Load zero
+      il.Emit(OpCodes.Stloc_2);  // Set current index
 
       // Create array
       il.Emit(OpCodes.Ldloc_1);             // Load array length

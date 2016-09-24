@@ -32,10 +32,7 @@ namespace Tests
       input.NullField = null;
       input.DoubleField = 50d;
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<NullTestType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.StrField, output.StrField);
       Assert.AreEqual(input.IntField, output.IntField);
@@ -58,15 +55,10 @@ namespace Tests
     {
       var input = new FullNullTestType();
 
-      using (var stream = File.Create(@"D:\file.bin"))
-      {
-        BinSerializer.Serialize(stream, input);
-        stream.Position = 0;
-        var output = BinSerializer.Deserialize<FullNullTestType>(stream);
+      var output = SerializeDeserialize(input);
 
-        Assert.AreEqual(output.StrFieldOne, null);
-        Assert.AreEqual(output.StrFieldOne, null);
-      }
+      Assert.AreEqual(output.StrFieldOne, null);
+      Assert.AreEqual(output.StrFieldOne, null);
     }
 
     [Type("StructContainerType")]
@@ -94,10 +86,7 @@ namespace Tests
       input.StructField.IntField = 10;
       input.StructField.FloatField = 0.55f;
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<StructContainerType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.StructField.IntField, output.StructField.IntField);
       Assert.AreEqual(input.StructField.FloatField, output.StructField.FloatField);
@@ -116,10 +105,7 @@ namespace Tests
       var input = new CycleReferenceType();
       input.Field = input;
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<CycleReferenceType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(ReferenceEquals(input, input.Field), ReferenceEquals(output, output.Field));
     }
@@ -151,10 +137,7 @@ namespace Tests
       var input = new InterfaceType();
       input.Field = new InterfaceImpl();
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<InterfaceType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(((InterfaceImpl)input.Field).Field, ((InterfaceImpl)output.Field).Field);
     }
@@ -172,10 +155,7 @@ namespace Tests
       var input = new ArrayType();
       input.ArrayField = new[] { 1, 3, 3, 7 };
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<ArrayType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.ArrayField.Length, output.ArrayField.Length);
 
@@ -214,10 +194,7 @@ namespace Tests
         new ArrayElementType(7)
       };
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<ArrayType2>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.ArrayField.Length, output.ArrayField.Length);
 
@@ -244,10 +221,7 @@ namespace Tests
       input.FieldOne.FieldTwo = 300;
       input.FieldTwo = 200;
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<GenericType<GenericType<int, int>, int>>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.FieldOne.FieldOne, output.FieldOne.FieldOne);
       Assert.AreEqual(input.FieldOne.FieldTwo, output.FieldOne.FieldTwo);
@@ -271,13 +245,43 @@ namespace Tests
       input.FieldOne = "asdasdasdasd";
       input.FieldTwo = "asdasdasdasd";
 
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      var output = BinSerializer.Deserialize<SimpleTypesRefTestType>(stream);
+      var output = SerializeDeserialize(input);
 
       Assert.AreEqual(input.FieldOne, output.FieldOne);
       Assert.AreEqual(input.FieldTwo, output.FieldTwo);
+    }
+
+    [Type("EnumTestType")]
+    class EnumTestType
+    {
+      [Field("a")]
+      public EnumType Field;
+    }
+
+    enum EnumType : long
+    {
+      One = 1,
+      Two = 2,
+      Three = 3
+    }
+
+    [TestMethod]
+    public void EnumTest()
+    {
+      var input = new EnumTestType();
+      input.Field = EnumType.One;
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.Field, output.Field);
+    }
+
+    private static T SerializeDeserialize<T>(T input)
+    {
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, input);
+      stream.Position = 0;
+      return BinSerializer.Deserialize<T>(stream);
     }
   }
 }
