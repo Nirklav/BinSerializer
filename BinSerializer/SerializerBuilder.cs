@@ -24,7 +24,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * |-------------------------------------|
    * | string - type Name                  | 
    * |-------------------------------------|
-   * | int - written type version          |
+   * | int - type version                  |
    * |-------------------------------------|
    * | bytes - type data                   | 
    * |-------------------------------------|
@@ -40,7 +40,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * | int - reference id                  | If reference is null it's be end of type.
    * |                                     | If reference already exist when you read then it is also be end of type.
    * |-------------------------------------|
-   * | int - written type version          |
+   * | int - type version                  |
    * |-------------------------------------|
    * | bytes - type data                   |
    * |-------------------------------------|
@@ -52,7 +52,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * |-------------------------------------|
    * | string - type Name                  | 
    * |-------------------------------------|
-   * | int - written type version          |
+   * | int - type version                  |
    * |-------------------------------------|
    * 
    * // Fields (if field is null nothing will be written)
@@ -88,7 +88,7 @@ namespace ThirtyNineEighty.BinarySerializer
    * | int - reference id                  | If reference is null it's be end of type.
    * |                                     | If reference already exist when you read then it is also be end of type.
    * |-------------------------------------|
-   * | int - written type version          |
+   * | int - type version                  |
    * |-------------------------------------|
    * 
    * // Fields (if field is null nothing will be written)
@@ -481,7 +481,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Stloc_0);                               // Set ref id to local
 
         // Check if result null
-        il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel);     // Check if null was written
+        il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel); // Check if null was written
 
         // Null was written (return null)
         il.Emit(OpCodes.Ldnull);
@@ -724,12 +724,19 @@ namespace ThirtyNineEighty.BinarySerializer
     #region get fields
     private static IEnumerable<FieldInfo> GetFields(Type type)
     {
-      return type
+      var fields = type
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
         .Where(i => i.Attribute != null)
-        .OrderBy(i => i.Attribute.Id)
-        .Select(i => i.Field);
+        .OrderBy(i => i.Attribute.Id);
+
+      var declaredIds = new HashSet<string>();
+      foreach (var pair in fields)
+      {
+        if (!declaredIds.Add(pair.Attribute.Id))
+          throw new ArgumentException(string.Format("Field {0} declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
+        yield return pair.Field;
+      }
     }
     #endregion
   }
