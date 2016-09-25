@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -154,26 +155,35 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region writer
     // Only for refs
+    [SecurityCritical]
     public static Writer GetWriter(Type type)
     {
-      return _writers.GetOrAdd(type, t =>
-      {
-        var dynamicMethod = _writersD.GetOrAdd(t, CreateWriter);
-        return (Writer)dynamicMethod.CreateDelegate(typeof(Writer));
-      });
+      return _writers.GetOrAdd(type, CreateWriterDelegate);
+    }
+
+    [SecurityCritical]
+    private static Writer CreateWriterDelegate(Type type)
+    {
+      var dynamicMethod = _writersD.GetOrAdd(type, CreateWriterMethod);
+      return (Writer)dynamicMethod.CreateDelegate(typeof(Writer));
     }
 
     // Only for structs
+    [SecurityCritical]
     public static Writer<T> GetWriter<T>()
     {
-      return (Writer<T>)_writersT.GetOrAdd(typeof(T), t =>
-      {
-        var dynamicMethod = _writersD.GetOrAdd(t, CreateWriter);
-        return dynamicMethod.CreateDelegate(typeof(Writer<T>));
-      });
+      return (Writer<T>)_writersT.GetOrAdd(typeof(T), CreateWriterDelegateT);
     }
 
-    private static DynamicMethod CreateWriter(Type type)
+    [SecurityCritical]
+    private static Delegate CreateWriterDelegateT(Type type)
+    {
+      var dynamicMethod = _writersD.GetOrAdd(type, CreateWriterMethod);
+      return dynamicMethod.CreateDelegate(typeof(Writer<>).MakeGenericType(type));
+    }
+
+    [SecuritySafeCritical]
+    private static DynamicMethod CreateWriterMethod(Type type)
     {
       DynamicMethod dynamicMethod = null;
 
@@ -191,18 +201,19 @@ namespace ThirtyNineEighty.BinarySerializer
       var il = dynamicMethod.GetILGenerator();
 
       if (!type.IsArray)
-        CreateObjectWriter(il, type);
+        GenerateObjectWriter(il, type);
       else      
-        CreateArrayWriter(il, type);
+        GenerateArrayWriter(il, type);
 
       return dynamicMethod;
     }
 
-    private static void CreateObjectWriter(ILGenerator il, Type type)
+    [SecurityCritical]
+    private static void GenerateObjectWriter(ILGenerator il, Type type)
     {
       var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
 
-      il.DeclareLocal(typeof(bool));
+      var local = il.DeclareLocal(typeof(bool));
 
       var skipTypeLabel = il.DefineLabel();
 
@@ -216,10 +227,10 @@ namespace ThirtyNineEighty.BinarySerializer
       if (!type.IsValueType)
       {
         // Write refId
-        il.Emit(OpCodes.Ldarg_0);         // Load stream
-        il.Emit(OpCodes.Ldarg_1);         // Load obj
-        il.Emit(OpCodes.Ldloca_S, 0);     // Load address of bool local
-        il.Emit(OpCodes.Call, getRefId);  // Obj => RefId
+        il.Emit(OpCodes.Ldarg_0);           // Load stream
+        il.Emit(OpCodes.Ldarg_1);           // Load obj
+        il.Emit(OpCodes.Ldloca_S, (byte)0); // Load address of bool local
+        il.Emit(OpCodes.Call, getRefId);    // Obj => RefId
         il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
         // Check case when reference type already serialized.
@@ -254,13 +265,17 @@ namespace ThirtyNineEighty.BinarySerializer
           if (!field.FieldType.IsValueType)
           {
             il.Emit(OpCodes.Ldarg_1);                 // Load object
+
+            if (!type.IsValueType)                    // Cast only if type is ref
+              il.Emit(OpCodes.Castclass, type);       // Cast to type
+
             il.Emit(OpCodes.Ldfld, field);            // Read field form object
             il.Emit(OpCodes.Brfalse, skipFieldLabel); // Skip if field is null
           }
 
           // Write field id
-          il.Emit(OpCodes.Ldarg_0);
-          il.Emit(OpCodes.Ldstr, fieldAttribute.Id);
+          il.Emit(OpCodes.Ldarg_0);                   // Load stream
+          il.Emit(OpCodes.Ldstr, fieldAttribute.Id);  // Load field id
           il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string)));
 
           var serialize = typeof(BinSerializer)
@@ -268,10 +283,14 @@ namespace ThirtyNineEighty.BinarySerializer
             .MakeGenericMethod(field.FieldType);
 
           // Write field
-          il.Emit(OpCodes.Ldarg_0);         // Load stream
-          il.Emit(OpCodes.Ldarg_1);         // Load object
-          il.Emit(OpCodes.Ldfld, field);    // Read field from object
-          il.Emit(OpCodes.Call, serialize); // Write field value
+          il.Emit(OpCodes.Ldarg_0);           // Load stream
+          il.Emit(OpCodes.Ldarg_1);           // Load object
+
+          if (!type.IsValueType)              // Cast only if type is ref
+            il.Emit(OpCodes.Castclass, type); // Cast to type
+
+          il.Emit(OpCodes.Ldfld, field);      // Read field from object
+          il.Emit(OpCodes.Call, serialize);   // Write field value
 
           // Skip field label
           il.MarkLabel(skipFieldLabel);
@@ -292,7 +311,8 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Ret);
     }
 
-    private static void CreateArrayWriter(ILGenerator il, Type type)
+    [SecurityCritical]
+    private static void GenerateArrayWriter(ILGenerator il, Type type)
     {
       var elementType = type.GetElementType();
 
@@ -317,10 +337,10 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(string)));
 
       // Write refId
-      il.Emit(OpCodes.Ldarg_0);         // Load stream
-      il.Emit(OpCodes.Ldarg_1);         // Load obj
-      il.Emit(OpCodes.Ldloca_S, 2);     // Load address of bool local
-      il.Emit(OpCodes.Call, getRefId);  // Obj => RefId
+      il.Emit(OpCodes.Ldarg_0);           // Load stream
+      il.Emit(OpCodes.Ldarg_1);           // Load obj
+      il.Emit(OpCodes.Ldloca_S, (byte)2); // Load address of bool local
+      il.Emit(OpCodes.Call, getRefId);    // Obj => RefId
       il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
       // Check case when reference type already serialized.
@@ -332,7 +352,8 @@ namespace ThirtyNineEighty.BinarySerializer
       if (dim == 1)
       {
         // Dimension check
-        il.Emit(OpCodes.Ldarg_0);                 // Load array
+        il.Emit(OpCodes.Ldarg_1);                 // Load array
+        il.Emit(OpCodes.Castclass, type);         // Cast object to array
         il.Emit(OpCodes.Ldc_I4_0);                // Load zero (0 dim)
         il.Emit(OpCodes.Callvirt, getLowerBound); // Get lower bound of 0 dim
         il.Emit(OpCodes.Brfalse, zeroBased);      // If result 0 then jump to zeroBased
@@ -344,15 +365,17 @@ namespace ThirtyNineEighty.BinarySerializer
 
         // Write array length
         il.MarkLabel(zeroBased);
-        il.Emit(OpCodes.Ldarg_0); // Load stream
-        il.Emit(OpCodes.Ldarg_1); // Load array
-        il.Emit(OpCodes.Ldlen);   // Load array length
+        il.Emit(OpCodes.Ldarg_0);         // Load stream
+        il.Emit(OpCodes.Ldarg_1);         // Load array
+        il.Emit(OpCodes.Castclass, type); // Cast object to array
+        il.Emit(OpCodes.Ldlen);           // Load array length
         il.Emit(OpCodes.Call, Types.TryGetWriter(typeof(int)));
 
         // Set array length
-        il.Emit(OpCodes.Ldarg_1); // Load array
-        il.Emit(OpCodes.Ldlen);   // Load array length
-        il.Emit(OpCodes.Stloc_0); // Set to 0 local
+        il.Emit(OpCodes.Ldarg_1);         // Load array
+        il.Emit(OpCodes.Castclass, type); // Cast object to array
+        il.Emit(OpCodes.Ldlen);           // Load array length
+        il.Emit(OpCodes.Stloc_0);         // Set to 0 local
 
         // Set array index to 0
         il.Emit(OpCodes.Ldc_I4_0); // Load 0
@@ -369,6 +392,7 @@ namespace ThirtyNineEighty.BinarySerializer
         // Write element to stream
         il.Emit(OpCodes.Ldarg_0);             // Load stream
         il.Emit(OpCodes.Ldarg_1);             // Load array
+        il.Emit(OpCodes.Castclass, type);     // Cast object to array
         il.Emit(OpCodes.Ldloc_1);             // Load current index
         il.Emit(OpCodes.Ldelem, elementType); // Load element
         il.Emit(OpCodes.Call, serialize);
@@ -400,26 +424,35 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region reader
     // Only for refs
+    [SecurityCritical]
     public static Reader GetReader(Type type)
     {
-      return _readers.GetOrAdd(type, t =>
-      {
-        var dynamicMethod = _readersD.GetOrAdd(t, CreateReader);
-        return (Reader)dynamicMethod.CreateDelegate(typeof(Reader));
-      });
+      return _readers.GetOrAdd(type, CreateReaderDelegate);
+    }
+
+    [SecurityCritical]
+    private static Reader CreateReaderDelegate(Type type)
+    {
+      var dynamicMethod = _readersD.GetOrAdd(type, CreateReaderMethod);
+      return (Reader)dynamicMethod.CreateDelegate(typeof(Reader));
     }
 
     // Only for structs
+    [SecurityCritical]
     public static Reader<T> GetReader<T>()
     {
-      return (Reader<T>)_readersT.GetOrAdd(typeof(T), t =>
-      {
-        var dynamicMethod = _readersD.GetOrAdd(t, CreateReader);
-        return dynamicMethod.CreateDelegate(typeof(Reader<T>));
-      });
+      return (Reader<T>)_readersT.GetOrAdd(typeof(T), CreateReaderDelegateT);
     }
 
-    private static DynamicMethod CreateReader(Type type)
+    [SecurityCritical]
+    private static Delegate CreateReaderDelegateT(Type type)
+    {
+      var dynamicMethod = _readersD.GetOrAdd(type, CreateReaderMethod);
+      return dynamicMethod.CreateDelegate(typeof(Reader<>).MakeGenericType(type));
+    }
+
+    [SecurityCritical]
+    private static DynamicMethod CreateReaderMethod(Type type)
     {
       DynamicMethod dynamicMethod = null;
 
@@ -437,14 +470,15 @@ namespace ThirtyNineEighty.BinarySerializer
       var il = dynamicMethod.GetILGenerator();
 
       if (!type.IsArray)
-        CreateObjectReader(il, type);
+        GenerateObjectReader(il, type);
       else
-        CreateArrayReader(il, type);
+        GenerateArrayReader(il, type);
 
       return dynamicMethod;
     }
 
-    private static void CreateObjectReader(ILGenerator il, Type type)
+    [SecurityCritical]
+    private static void GenerateObjectReader(ILGenerator il, Type type)
     {
       var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static);
       var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static);
@@ -454,7 +488,12 @@ namespace ThirtyNineEighty.BinarySerializer
       var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
 
       il.DeclareLocal(typeof(int));
-      il.DeclareLocal(type);
+
+      if (type.IsValueType)
+        il.DeclareLocal(type);
+      else
+        il.DeclareLocal(typeof(object));
+
       il.DeclareLocal(typeof(string));
 
       var resultLabel = il.DefineLabel();
@@ -491,7 +530,7 @@ namespace ThirtyNineEighty.BinarySerializer
         // Try get readed reference
         il.MarkLabel(tryLoadReferenceLabel);
         il.Emit(OpCodes.Ldloc_0);             // Load reference id
-        il.Emit(OpCodes.Ldloca_S, 1);         // Load address of result
+        il.Emit(OpCodes.Ldloca_S, (byte)1);   // Load address of result
         il.Emit(OpCodes.Call, tryGetRef);
         il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
       }
@@ -543,7 +582,7 @@ namespace ThirtyNineEighty.BinarySerializer
         }
         else
         {
-          il.Emit(OpCodes.Ldloca_S, 1); // Load result local address
+          il.Emit(OpCodes.Ldloca_S, (byte)1); // Load result local address
           il.Emit(OpCodes.Initobj, type);
         }
 
@@ -590,10 +629,13 @@ namespace ThirtyNineEighty.BinarySerializer
             .MakeGenericMethod(field.FieldType);
 
           // Prepeare stack to field set
-          if (!type.IsValueType)
-            il.Emit(OpCodes.Ldloc_1);
+          if (type.IsValueType)
+            il.Emit(OpCodes.Ldloca_S, (byte)1);
           else
-            il.Emit(OpCodes.Ldloca_S, 1); 
+          {
+            il.Emit(OpCodes.Ldloc_1);
+            il.Emit(OpCodes.Castclass, type);
+          }
 
           // Read field
           il.Emit(OpCodes.Ldarg_0); // Load stream
@@ -621,7 +663,8 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Ret);
     }
 
-    private static void CreateArrayReader(ILGenerator il, Type type)
+    [SecurityCritical]
+    private static void GenerateArrayReader(ILGenerator il, Type type)
     {
       var elementType = type.GetElementType();
 
@@ -631,10 +674,10 @@ namespace ThirtyNineEighty.BinarySerializer
 
       // array type id already was readed
 
-      il.DeclareLocal(typeof(int)); // Ref id
-      il.DeclareLocal(typeof(int)); // Array length
-      il.DeclareLocal(typeof(int)); // Current index
-      il.DeclareLocal(type);        // Result array
+      il.DeclareLocal(typeof(int));    // Ref id
+      il.DeclareLocal(typeof(int));    // Array length
+      il.DeclareLocal(typeof(int));    // Current index
+      il.DeclareLocal(typeof(object)); // Result array
 
       var loopLabel = il.DefineLabel();
       var resultLabel = il.DefineLabel();
@@ -657,7 +700,7 @@ namespace ThirtyNineEighty.BinarySerializer
       // Try get readed reference
       il.MarkLabel(tryLoadReferenceLabel);
       il.Emit(OpCodes.Ldloc_0);             // Load reference id
-      il.Emit(OpCodes.Ldloca_S, 3);         // Load address of result
+      il.Emit(OpCodes.Ldloca_S, (byte)3);   // Load address of result
       il.Emit(OpCodes.Call, tryGetRef);
       il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
 
@@ -689,8 +732,9 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Beq, resultLabel);
 
       // Prepare set element
-      il.Emit(OpCodes.Ldloc_3); // Load array
-      il.Emit(OpCodes.Ldloc_2); // Load index
+      il.Emit(OpCodes.Ldloc_3);         // Load array
+      il.Emit(OpCodes.Castclass, type); // Cast object to array
+      il.Emit(OpCodes.Ldloc_2);         // Load index
 
       // Read value
       il.Emit(OpCodes.Ldarg_0);           // Load stream
@@ -715,6 +759,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     // Used when saved version not equal to version in runned program.
     // It's slower than generated.
+    [SecurityCritical]
     private static T DynamicObjectRead<T>(Stream stream)
     {
       throw new NotImplementedException();
@@ -722,6 +767,7 @@ namespace ThirtyNineEighty.BinarySerializer
     #endregion
 
     #region get fields
+    [SecurityCritical]
     private static IEnumerable<FieldInfo> GetFields(Type type)
     {
       var fields = type

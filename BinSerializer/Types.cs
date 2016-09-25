@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security;
 using System.Text;
 using System.Threading;
 
@@ -9,47 +10,9 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   public static class Types
   {
-    private class SerializerTypeInfo
-    {
-      public readonly TypeInfo Type;
-      public readonly string TypeId;
-      public readonly int Version;
-      public readonly int MinSupportedVersion;
-
-      public readonly MethodInfo Writer;
-      public readonly MethodInfo Reader;
-      public readonly MethodInfo Skiper;
-      
-      public SerializerTypeInfo(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader, MethodInfo skiper)
-      {
-        Type = type.GetTypeInfo();
-        TypeId = typeId;
-        Version = version;
-        MinSupportedVersion = minSupportedVersion;
-
-        Writer = writer;
-        Reader = reader;
-        Skiper = skiper;
-      }
-    }
-
     public const string NullToken = "nil";
     public const string TypeEndToken = "end";
     public const string ArrayToken = "arr";
-
-    private static readonly HashSet<string> _reservedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-      NullToken,
-      TypeEndToken,
-      ArrayToken
-    };
-
-    private static readonly HashSet<char> _reservedChars = new HashSet<char>()
-    {
-      '[', ']',
-      '(', ')',
-      '<', '>'
-    };
 
     // Types map
     private static readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
@@ -63,6 +26,8 @@ namespace ThirtyNineEighty.BinarySerializer
     private static readonly ConcurrentDictionary<string, Type> _typeIdToTypeArrayCache = new ConcurrentDictionary<string, Type>();
     private static readonly ConcurrentDictionary<Type, string> _typeToTypeIdArrayCache = new ConcurrentDictionary<Type, string>();
 
+    #region initialization
+    [SecuritySafeCritical]
     static Types()
     {
       AddType<bool>();
@@ -84,6 +49,7 @@ namespace ThirtyNineEighty.BinarySerializer
       AddUserDefinedTypes();
     }
 
+    [SecurityCritical]
     private static void AddType<T>()
     {
       var type = typeof(T);
@@ -108,6 +74,7 @@ namespace ThirtyNineEighty.BinarySerializer
       AddTypeImpl(type, type.Name, 0, 0, writer, reader, skiper);
     }
 
+    [SecurityCritical]
     private static void AddUserDefinedTypes()
     {
       foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -121,18 +88,9 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    [SecurityCritical]
     private static void AddTypeImpl(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader, MethodInfo skiper)
     {
-      if (_reservedIds.Contains(typeId))
-        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
-
-      if (type.IsGenericType && !type.IsGenericTypeDefinition)
-        throw new ArgumentException("Only opened generic types can be registered.");
-
-      foreach (var ch in typeId)
-        if (_reservedChars.Contains(ch))
-          throw new ArgumentException("Id contains reserved symbols '[',']','(',')','<','>'.");
-
       var typeInfo = new SerializerTypeInfo(type, typeId, version, minSupportedVersion, writer, reader, skiper);
 
       if (_typesById.ContainsKey(typeInfo.TypeId))
@@ -145,11 +103,13 @@ namespace ThirtyNineEighty.BinarySerializer
       _typesByType.Add(type, typeInfo);
     }
 
+    [SecuritySafeCritical]
     public static void AddType(Type type, string typeId, int version, int minSppportedVersion)
     {
       AddType(type, typeId, version, minSppportedVersion, null, null);
     }
 
+    [SecuritySafeCritical]
     public static void AddType(Type type, string typeId, int version, int minSupportedVersion, MethodInfo writer, MethodInfo reader)
     {
       _locker.EnterWriteLock();
@@ -162,7 +122,10 @@ namespace ThirtyNineEighty.BinarySerializer
         _locker.ExitWriteLock();
       }
     }
+    #endregion
 
+    #region get type id
+    [SecurityCritical]
     internal static string GetTypeId(Type type)
     {
       _locker.EnterReadLock();
@@ -182,6 +145,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     // Must be called read under lock
+    [SecurityCritical]
     private static string GetTypeIdImpl(Type type)
     {
       string genericTypeId;
@@ -191,7 +155,10 @@ namespace ThirtyNineEighty.BinarySerializer
       var info = GetTypeInfo(type);
       return BuildTypeId(info, type);
     }
+    #endregion
 
+    #region get type
+    [SecuritySafeCritical]
     public static Type GetType(string typeId)
     {
       _locker.EnterReadLock();
@@ -211,6 +178,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     // Must be called read under lock
+    [SecurityCritical]
     private static Type GetTypeImpl(string typeId)
     {
       Type genericType;
@@ -220,7 +188,10 @@ namespace ThirtyNineEighty.BinarySerializer
       var info = GetTypeInfo(typeId);
       return BuildType(info, typeId);
     }
+    #endregion
 
+    #region get versions
+    [SecurityCritical]
     internal static int GetVersion(Type type)
     {
       _locker.EnterReadLock();
@@ -235,6 +206,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    [SecurityCritical]
     internal static int GetMinSupported(Type type)
     {
       _locker.EnterReadLock();
@@ -248,7 +220,10 @@ namespace ThirtyNineEighty.BinarySerializer
         _locker.ExitReadLock();
       }
     }
+    #endregion
 
+    #region get writer/reader/skiper
+    [SecurityCritical]
     internal static MethodInfo TryGetWriter(Type type)
     {
       _locker.EnterReadLock();
@@ -263,6 +238,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    [SecurityCritical]
     internal static MethodInfo TryGetReader(Type type)
     {
       _locker.EnterReadLock();
@@ -277,6 +253,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    [SecurityCritical]
     internal static MethodInfo TryGetSkiper(Type type)
     {
       _locker.EnterReadLock();
@@ -290,8 +267,11 @@ namespace ThirtyNineEighty.BinarySerializer
         _locker.ExitReadLock();
       }
     }
+    #endregion
 
+    #region array processing helpers
     // Must be called read under lock
+    [SecurityCritical]
     private static bool TryGetArrayType(string typeId, out Type type)
     {
       if (!typeId.StartsWith(ArrayToken))
@@ -313,6 +293,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     // Must be called read under lock
+    [SecurityCritical]
     private static bool TryGetArrayTypeId(Type type, out string typeId)
     {
       if (!type.IsArray)
@@ -337,8 +318,11 @@ namespace ThirtyNineEighty.BinarySerializer
       _typeToTypeIdArrayCache.TryAdd(type, typeId);
       return true;
     }
+    #endregion
 
+    #region type info helpers
     // Must be called read under lock
+    [SecurityCritical]
     private static SerializerTypeInfo GetTypeInfo(Type type)
     {
       var normalizedType = Normalize(type);
@@ -349,6 +333,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     // Must be called read under lock
+    [SecurityCritical]
     private static SerializerTypeInfo GetTypeInfo(string typeId)
     {
       var normalizedTypeId = Normalize(typeId);
@@ -357,8 +342,11 @@ namespace ThirtyNineEighty.BinarySerializer
         throw new ArgumentException("TypeInfo not found");
       return info;
     }
+    #endregion
 
+    #region build type/typeid herlpers
     // Must be called read under lock
+    [SecurityCritical]
     private static Type BuildType(SerializerTypeInfo typeInfo, string typeId)
     {
       if (!IsGenericTypeId(typeId))
@@ -381,6 +369,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     // Must be called read under lock
+    [SecurityCritical]
     private static string BuildTypeId(SerializerTypeInfo typeInfo, Type type)
     {
       if (!type.IsGenericType || type.IsGenericTypeDefinition)
@@ -413,7 +402,10 @@ namespace ThirtyNineEighty.BinarySerializer
       _typeToTypeIdGenericCache.TryAdd(type, result);
       return result;
     }
-    
+    #endregion
+
+    #region normilize type/typeid helpers
+    [SecurityCritical]
     private static Type Normalize(Type type)
     {
       if (type.IsEnum)
@@ -425,6 +417,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return type;
     }
 
+    [SecurityCritical]
     private static string Normalize(string typeId)
     {
       var index1 = typeId.IndexOf('[');
@@ -433,7 +426,10 @@ namespace ThirtyNineEighty.BinarySerializer
 
       return typeId.Substring(0, index1);
     }
+    #endregion
 
+    #region generics helpers
+    [SecurityCritical]
     private static bool IsGenericTypeId(string typeId)
     {
       var index1 = typeId.IndexOf('[');
@@ -447,6 +443,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return index2 > index1;
     }
 
+    [SecurityCritical]
     private static IEnumerable<string> EnumerateGenericTypeIds(string genericTypeId)
     {
       var index1 = genericTypeId.IndexOf('[');
@@ -483,5 +480,6 @@ namespace ThirtyNineEighty.BinarySerializer
         }
       }
     }
+    #endregion
   }
 }

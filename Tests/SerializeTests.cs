@@ -276,6 +276,18 @@ namespace Tests
       Assert.AreEqual(input.Field, output.Field);
     }
 
+    [Type("EmptyTestType")]
+    class EmptyTestType
+    {
+    }
+
+    [TestMethod]
+    public void EmptyTest()
+    {
+      var input = new EmptyTestType();
+      var output = SerializeDeserialize(input);
+    }
+
     private static T SerializeDeserialize<T>(T input)
     {
       var stream = new MemoryStream();

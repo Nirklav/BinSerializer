@@ -51,6 +51,7 @@
     <Compile Include="RefReaderWatcher.cs" />
     <Compile Include="RefWriterWatcher.cs" />
     <Compile Include="SerializerBuilder.cs" />
+    <Compile Include="SerializerTypeInfo.cs" />
     <Compile Include="StreamExtensions.cs" />
     <Compile Include="TypeAttribute.cs" />
     <Compile Include="Types.cs" />

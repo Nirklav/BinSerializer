@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -16,6 +17,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     private readonly bool _isRoot;
 
+    [SecuritySafeCritical]
     public RefWriterWatcher(bool unsued)
     {
       if (_refIds == null)
@@ -32,6 +34,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
+    [SecuritySafeCritical]
     public static int GetRefId(object reference, out bool created)
     {
       if (reference == null)
@@ -52,6 +55,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return refId;
     }
 
+    [SecuritySafeCritical]
     public void Dispose()
     {
       if (_isRoot)
