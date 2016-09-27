@@ -483,6 +483,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static);
       var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static);
       var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
+      var defaultCtor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
       var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
       var dynamicObjectRead = typeof(SerializerBuilder).GetMethod("DynamicObjectRead", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(type);
       var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
@@ -575,10 +576,18 @@ namespace ThirtyNineEighty.BinarySerializer
         // Create
         if (!type.IsValueType)
         {
-          il.Emit(OpCodes.Ldtoken, type);
-          il.Emit(OpCodes.Call, getTypeFromHandle);
-          il.Emit(OpCodes.Call, getUninitializedObject);
-          il.Emit(OpCodes.Stloc_1); // Set result to local
+          if (defaultCtor != null)
+          {
+            il.Emit(OpCodes.Newobj, defaultCtor);
+            il.Emit(OpCodes.Stloc_1); // Set result to local
+          }
+          else
+          {
+            il.Emit(OpCodes.Ldtoken, type);
+            il.Emit(OpCodes.Call, getTypeFromHandle);
+            il.Emit(OpCodes.Call, getUninitializedObject);
+            il.Emit(OpCodes.Stloc_1); // Set result to local
+          }
         }
         else
         {
@@ -795,6 +804,8 @@ namespace ThirtyNineEighty.BinarySerializer
       {
         if (!declaredIds.Add(pair.Attribute.Id))
           throw new ArgumentException(string.Format("Field {0} declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
+        if (pair.Field.IsInitOnly)
+          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {0}", pair.Field.Name, pair.Field.DeclaringType));
         yield return pair.Field;
       }
     }

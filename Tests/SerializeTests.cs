@@ -279,12 +279,16 @@ namespace Tests
     [Type("EmptyTestType")]
     class EmptyTestType
     {
+      public EmptyTestType(int unused)
+      {
+
+      }
     }
 
     [TestMethod]
     public void EmptyTest()
     {
-      var input = new EmptyTestType();
+      var input = new EmptyTestType(10);
       var output = SerializeDeserialize(input);
     }
 
