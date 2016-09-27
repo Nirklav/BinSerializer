@@ -288,6 +288,94 @@ namespace Tests
       var output = SerializeDeserialize(input);
     }
 
+    [TestMethod]
+    public void MultipleSerializationTest()
+    {
+      var input1 = new EnumTestType();
+      input1.Field = EnumType.Three;
+
+      var input2 = new GenericType<int, int>();
+      input2.FieldOne = 5;
+      input2.FieldTwo = 10;
+
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, input1);
+      BinSerializer.Serialize(stream, input2);
+      stream.Position = 0;
+
+      var output1 = BinSerializer.Deserialize<EnumTestType>(stream);
+      var output2 = BinSerializer.Deserialize<GenericType<int, int>>(stream);
+
+      Assert.AreEqual(input1.Field, output1.Field);
+
+      Assert.AreEqual(input2.FieldOne, output2.FieldOne);
+      Assert.AreEqual(input2.FieldTwo, output2.FieldTwo);
+    }
+
+    [Type("InheritorBaseType")]
+    class InheritorBaseType
+    {
+      [Field("0")]
+      private long _zero;
+
+      public long Zero { get { return _zero; } set { _zero = value; } }
+    }
+
+    [Type("Inheritor2BaseType")]
+    class Inheritor2BaseType : InheritorBaseType
+    {
+      [Field("a")]
+      private string _one;
+
+      [Field("b")]
+      private string _two;
+
+      [Field("c")]
+      public string Three;
+
+      public string One { get { return _one; } set { _one = value; } }
+      public string Two { get { return _two; } set { _two = value; } }
+    }
+
+    [Type("InheritorType")]
+    class InheritorType : Inheritor2BaseType
+    {
+      [Field("d")]
+      private string _four;
+
+      [Field("g")]
+      private string _five;
+
+      [Field("h")]
+      public int Six;
+
+      public string Four { get { return _four; } set { _four = value; } }
+      public string Five { get { return _five; } set { _five = value; } }
+    }
+    
+    [TestMethod]
+    public void InheritanceTest()
+    {
+      var input = new InheritorType();
+      input.Zero = -1; // kek
+      input.One = "1";
+      input.Two = "2";
+      input.Three = "3";
+      input.Four = "4";
+      input.Five = "5";
+      input.Six = 6;
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.Zero, output.Zero);
+      Assert.AreEqual(input.One, output.One);
+      Assert.AreEqual(input.Two, output.Two);
+      Assert.AreEqual(input.Three, output.Three);
+      Assert.AreEqual(input.Four, output.Four);
+      Assert.AreEqual(input.Five, output.Five);
+      Assert.AreEqual(input.Six, output.Six);
+    }
+
     private static T SerializeDeserialize<T>(T input)
     {
       var stream = new MemoryStream();

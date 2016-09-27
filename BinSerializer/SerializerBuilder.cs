@@ -773,8 +773,22 @@ namespace ThirtyNineEighty.BinarySerializer
       var fields = type
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
-        .Where(i => i.Attribute != null)
-        .OrderBy(i => i.Attribute.Id);
+        .Where(i => i.Attribute != null);
+
+      Type currentType = type;
+      while (true)
+      {
+        currentType = currentType.BaseType;
+        if (currentType == typeof(object))
+          break;
+
+        var baseTypePrivateFields = currentType
+          .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+          .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
+          .Where(i => i.Attribute != null);
+
+        fields = fields.Concat(baseTypePrivateFields);
+      } 
 
       var declaredIds = new HashSet<string>();
       foreach (var pair in fields)
