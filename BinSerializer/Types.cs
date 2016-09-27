@@ -328,7 +328,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var normalizedType = Normalize(type);
       SerializerTypeInfo info;
       if (!_typesByType.TryGetValue(normalizedType, out info))
-        throw new ArgumentException("TypeInfo not found");
+        throw new ArgumentException(string.Format("TypeInfo not found. For type {0}", type));
       return info;
     }
 
@@ -339,7 +339,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var normalizedTypeId = Normalize(typeId);
       SerializerTypeInfo info;
       if (!_typesById.TryGetValue(normalizedTypeId, out info))
-        throw new ArgumentException("TypeInfo not found");
+        throw new ArgumentException(string.Format("TypeInfo not found. For typeId {0}", typeId));
       return info;
     }
     #endregion
