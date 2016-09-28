@@ -335,8 +335,9 @@ namespace Tests
       private string _two;
 
       [Field("c")]
-      public string Three;
+      protected string _three;
 
+      public string Three { get { return _three; } set { _three = value; } }
       public string One { get { return _one; } set { _one = value; } }
       public string Two { get { return _two; } set { _two = value; } }
     }

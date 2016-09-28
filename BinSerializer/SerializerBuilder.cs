@@ -793,6 +793,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
         var baseTypePrivateFields = currentType
           .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+          .Where(f => !f.IsFamily)
           .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
           .Where(i => i.Attribute != null);
 
@@ -800,10 +801,10 @@ namespace ThirtyNineEighty.BinarySerializer
       } 
 
       var declaredIds = new HashSet<string>();
-      foreach (var pair in fields)
+      foreach (var pair in fields.OrderBy(p => p.Attribute.Id))
       {
         if (!declaredIds.Add(pair.Attribute.Id))
-          throw new ArgumentException(string.Format("Field {0} declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
+          throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
         if (pair.Field.IsInitOnly)
           throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {0}", pair.Field.Name, pair.Field.DeclaringType));
         yield return pair.Field;
