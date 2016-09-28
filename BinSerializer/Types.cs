@@ -81,7 +81,7 @@ namespace ThirtyNineEighty.BinarySerializer
       {
         foreach (var type in assembly.DefinedTypes)
         {
-          var attribute = type.GetCustomAttribute<TypeAttribute>(false);
+          var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
           if (attribute != null)
             AddTypeImpl(type, attribute.Id, attribute.Version, attribute.MinSupportedVersion, null, null, null);
         }

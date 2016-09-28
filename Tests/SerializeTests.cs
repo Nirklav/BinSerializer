@@ -7,19 +7,19 @@ namespace Tests
   [TestClass]
   public class SerializeTests
   {
-    [Type("NullTestType")]
+    [BinType("NullTestType")]
     class NullTestType
     {
-      [Field("a")]
+      [BinField("a")]
       public string StrField;
       
-      [Field("b")]
+      [BinField("b")]
       public int IntField;
 
-      [Field("c")]
+      [BinField("c")]
       public NullTestType NullField;
 
-      [Field("d")]
+      [BinField("d")]
       public double DoubleField;
     }
     
@@ -40,13 +40,13 @@ namespace Tests
       Assert.AreEqual(input.DoubleField, output.DoubleField);
     }
 
-    [Type("FullNullTestType")]
+    [BinType("FullNullTestType")]
     class FullNullTestType
     {
-      [Field("a")]
+      [BinField("a")]
       public string StrFieldOne;
 
-      [Field("b")]
+      [BinField("b")]
       public string StrFieldTwo;
     }
 
@@ -61,20 +61,20 @@ namespace Tests
       Assert.AreEqual(output.StrFieldOne, null);
     }
 
-    [Type("StructContainerType")]
+    [BinType("StructContainerType")]
     class StructContainerType
     {
-      [Field("a")]
+      [BinField("a")]
       public StructType StructField;
     }
 
-    [Type("StructType")]
+    [BinType("StructType")]
     struct StructType
     {
-      [Field("b")]
+      [BinField("b")]
       public int IntField;
 
-      [Field("a")]
+      [BinField("a")]
       public float FloatField;
     }
 
@@ -92,10 +92,10 @@ namespace Tests
       Assert.AreEqual(input.StructField.FloatField, output.StructField.FloatField);
     }
 
-    [Type("CycleReferenceType")]
+    [BinType("CycleReferenceType")]
     class CycleReferenceType
     {
-      [Field("a")]
+      [BinField("a")]
       public CycleReferenceType Field;
     }
 
@@ -110,10 +110,10 @@ namespace Tests
       Assert.AreEqual(ReferenceEquals(input, input.Field), ReferenceEquals(output, output.Field));
     }
 
-    [Type("InterfaceType")]
+    [BinType("InterfaceType")]
     class InterfaceType
     {
-      [Field("a")]
+      [BinField("a")]
       public IInterface Field;
     }
 
@@ -122,10 +122,10 @@ namespace Tests
       int Field { get; }
     }
 
-    [Type("InterfaceImpl")]
+    [BinType("InterfaceImpl")]
     class InterfaceImpl : IInterface
     {
-      [Field("a")]
+      [BinField("a")]
       private int _field = 100;
 
       public int Field { get { return _field; } }
@@ -142,10 +142,10 @@ namespace Tests
       Assert.AreEqual(((InterfaceImpl)input.Field).Field, ((InterfaceImpl)output.Field).Field);
     }
 
-    [Type("ArrayType")]
+    [BinType("ArrayType")]
     class ArrayType
     {
-      [Field("a")]
+      [BinField("a")]
       public int[] ArrayField;
     }
 
@@ -163,17 +163,17 @@ namespace Tests
         Assert.AreEqual(input.ArrayField[i], output.ArrayField[i]);
     }
 
-    [Type("ArrayType2")]
+    [BinType("ArrayType2")]
     class ArrayType2
     {
-      [Field("a")]
+      [BinField("a")]
       public ArrayElementType[] ArrayField;
     }
 
-    [Type("ArrayElementType")]
+    [BinType("ArrayElementType")]
     public class ArrayElementType
     {
-      [Field("a")]
+      [BinField("a")]
       public int Field;
 
       public ArrayElementType(int f)
@@ -202,13 +202,13 @@ namespace Tests
         Assert.AreEqual(input.ArrayField[i].Field, output.ArrayField[i].Field);
     }
 
-    [Type("GenericType")]
+    [BinType("GenericType")]
     class GenericType<T1, T2>
     {
-      [Field("a")]
+      [BinField("a")]
       public T1 FieldOne;
 
-      [Field("b")]
+      [BinField("b")]
       public T2 FieldTwo;
     }
     
@@ -228,13 +228,13 @@ namespace Tests
       Assert.AreEqual(input.FieldTwo, output.FieldTwo);
     }
 
-    [Type("SimpleTypesRefTestType")]
+    [BinType("SimpleTypesRefTestType")]
     class SimpleTypesRefTestType
     {
-      [Field("a")]
+      [BinField("a")]
       public string FieldOne;
 
-      [Field("b")]
+      [BinField("b")]
       public string FieldTwo;
     }
 
@@ -251,10 +251,10 @@ namespace Tests
       Assert.AreEqual(input.FieldTwo, output.FieldTwo);
     }
 
-    [Type("EnumTestType")]
+    [BinType("EnumTestType")]
     class EnumTestType
     {
-      [Field("a")]
+      [BinField("a")]
       public EnumType Field;
     }
 
@@ -276,7 +276,7 @@ namespace Tests
       Assert.AreEqual(input.Field, output.Field);
     }
 
-    [Type("EmptyTestType")]
+    [BinType("EmptyTestType")]
     class EmptyTestType
     {
       public EmptyTestType(int unused)
@@ -316,25 +316,25 @@ namespace Tests
       Assert.AreEqual(input2.FieldTwo, output2.FieldTwo);
     }
 
-    [Type("InheritorBaseType")]
+    [BinType("InheritorBaseType")]
     class InheritorBaseType
     {
-      [Field("0")]
+      [BinField("0")]
       private long _zero;
 
       public long Zero { get { return _zero; } set { _zero = value; } }
     }
 
-    [Type("Inheritor2BaseType")]
+    [BinType("Inheritor2BaseType")]
     class Inheritor2BaseType : InheritorBaseType
     {
-      [Field("a")]
+      [BinField("a")]
       private string _one;
 
-      [Field("b")]
+      [BinField("b")]
       private string _two;
 
-      [Field("c")]
+      [BinField("c")]
       protected string _three;
 
       public string Three { get { return _three; } set { _three = value; } }
@@ -342,16 +342,16 @@ namespace Tests
       public string Two { get { return _two; } set { _two = value; } }
     }
 
-    [Type("InheritorType")]
+    [BinType("InheritorType")]
     class InheritorType : Inheritor2BaseType
     {
-      [Field("d")]
+      [BinField("d")]
       private string _four;
 
-      [Field("g")]
+      [BinField("g")]
       private string _five;
 
-      [Field("h")]
+      [BinField("h")]
       public int Six;
 
       public string Four { get { return _four; } set { _four = value; } }

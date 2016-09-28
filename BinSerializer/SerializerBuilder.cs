@@ -259,7 +259,7 @@ namespace ThirtyNineEighty.BinarySerializer
         foreach (var field in GetFields(type))
         {
           var skipFieldLabel = il.DefineLabel();
-          var fieldAttribute = field.GetCustomAttribute<FieldAttribute>(false);
+          var fieldAttribute = field.GetCustomAttribute<BinFieldAttribute>(false);
 
           // If field is null then skip it
           if (!field.FieldType.IsValueType)
@@ -608,7 +608,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
         foreach (var field in GetFields(type))
         {
-          var fieldAttribute = field.GetCustomAttribute<FieldAttribute>(false);
+          var fieldAttribute = field.GetCustomAttribute<BinFieldAttribute>(false);
 
           var markCurrent = nextFieldLabel != null;
           if (nextFieldLabel == null)
@@ -781,7 +781,7 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var fields = type
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-        .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
+        .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<BinFieldAttribute>(false) })
         .Where(i => i.Attribute != null);
 
       Type currentType = type;
@@ -794,7 +794,7 @@ namespace ThirtyNineEighty.BinarySerializer
         var baseTypePrivateFields = currentType
           .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
           .Where(f => !f.IsFamily)
-          .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<FieldAttribute>(false) })
+          .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<BinFieldAttribute>(false) })
           .Where(i => i.Attribute != null);
 
         fields = fields.Concat(baseTypePrivateFields);
