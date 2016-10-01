@@ -51,10 +51,15 @@
     <Compile Include="RefReaderWatcher.cs" />
     <Compile Include="RefWriterWatcher.cs" />
     <Compile Include="SerializerBuilder.cs" />
-    <Compile Include="SerializerTypeInfo.cs" />
+    <Compile Include="Types\ArraySerializerTypeInfo.cs" />
+    <Compile Include="Types\BinTypeDescription.cs" />
+    <Compile Include="Types\BinTypeProcess.cs" />
+    <Compile Include="Types\BinTypeVersion.cs" />
+    <Compile Include="Types\GenericSerializerTypeInfo.cs" />
+    <Compile Include="Types\SerializerTypeInfo.cs" />
     <Compile Include="StreamExtensions.cs" />
     <Compile Include="BinTypeAttribute.cs" />
-    <Compile Include="Types.cs" />
+    <Compile Include="Types\SerializerTypes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BinSerializerStrongName.snk" />

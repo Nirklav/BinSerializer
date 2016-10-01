@@ -1,0 +1,14 @@
+﻿namespace ThirtyNineEighty.BinarySerializer.Types
+{
+  public sealed class BinTypeVersion
+  {
+    public readonly int Version;
+    public readonly int MinSipportedVersion;
+
+    public BinTypeVersion(int version, int minSupportedVesrion)
+    {
+      Version = version;
+      MinSipportedVersion = minSupportedVesrion;
+    }
+  }
+}

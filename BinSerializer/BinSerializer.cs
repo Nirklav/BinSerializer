@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Security;
+using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -79,7 +80,7 @@ namespace ThirtyNineEighty.BinarySerializer
       BSDebug.TraceStart("Start read of ...");
 
       var typeId = stream.ReadString();
-      var type = Types.GetType(typeId);
+      var type = SerializerTypes.GetType(typeId);
 
       BSDebug.TraceStart("... " + type.Name);
 
