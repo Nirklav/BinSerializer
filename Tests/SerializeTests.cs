@@ -388,5 +388,51 @@ namespace Tests
       stream.Position = 0;
       return BinSerializer.Deserialize<T>(stream);
     }
+
+    [BinType("EqualsTestType")]
+    public class EqualsTestType
+    {
+      [BinField("f")]
+      public EqualsEntityTestType First;
+
+      [BinField("s")]
+      public EqualsEntityTestType Second;
+    }
+
+    [BinType("EqualsEntityTestType")]
+    public class EqualsEntityTestType
+    {
+      [BinField("i")]
+      public int Id;
+
+      public override bool Equals(object obj)
+      {
+        if (ReferenceEquals(obj, null))
+          return false;
+        if (ReferenceEquals(obj, this))
+          return true;
+        var e = obj as EqualsEntityTestType;
+        if (e == null)
+          return false;
+        return e.Id == Id;
+      }
+
+      public override int GetHashCode()
+      {
+        return Id;
+      }
+    }
+
+    [TestMethod]
+    public void EqualsTest()
+    {
+      var input = new EqualsTestType();
+      input.First = new EqualsEntityTestType();
+      input.Second = new EqualsEntityTestType();
+
+      var output = SerializeDeserialize(input);
+
+      Assert.IsFalse(ReferenceEquals(output.First, output.Second));
+    }
   }
 }

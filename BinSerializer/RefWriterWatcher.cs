@@ -1,11 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
   struct RefWriterWatcher : IDisposable
   {
+    sealed class RefEqualityComparer : IEqualityComparer<object>
+    {
+      public new bool Equals(object x, object y)
+      {
+        return ReferenceEquals(x, y);
+      }
+
+      public int GetHashCode(object obj)
+      {
+        return RuntimeHelpers.GetHashCode(obj);
+      }
+    }
+
     [ThreadStatic]
     private static Dictionary<object, int> _refIds;
 
@@ -21,7 +35,7 @@ namespace ThirtyNineEighty.BinarySerializer
     public RefWriterWatcher(bool unsued)
     {
       if (_refIds == null)
-        _refIds = new Dictionary<object, int>();
+        _refIds = new Dictionary<object, int>(new RefEqualityComparer());
 
       if (_rootCreated)
       {
