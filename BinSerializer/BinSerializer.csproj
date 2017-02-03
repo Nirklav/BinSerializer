@@ -47,6 +47,7 @@
     <Compile Include="BinSerializer.cs" />
     <Compile Include="BSDebug.cs" />
     <Compile Include="BinFieldAttribute.cs" />
+    <Compile Include="ProcessAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RefReaderWatcher.cs" />
     <Compile Include="RefWriterWatcher.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="StreamExtensions.cs" />
     <Compile Include="BinTypeAttribute.cs" />
     <Compile Include="Types\SerializerTypes.cs" />
+    <Compile Include="Types\SystemTypesProcess.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BinSerializerStrongName.snk" />

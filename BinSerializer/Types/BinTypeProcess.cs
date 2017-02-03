@@ -31,13 +31,16 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       var parameters = method.GetParameters();
       if (parameters.Length != 2)
-        throw new ArgumentException("Writer has invalid parameters count. It must have 2 parameters.");
+        throw new ArgumentException("Writer has invalid parameters count. Method must have 2 parameters.");
 
       if (parameters[0].ParameterType != typeof(Stream))
         throw new ArgumentException("Writer has invalid parameters. First parameter must be Stream.");
 
       if (method.ReturnType != typeof(void))
-        throw new ArgumentException("Writer has invalid return type. Is must return nothing.");
+        throw new ArgumentException("Writer has invalid return type. Method must return nothing.");
+
+      if (!IsGenericArgsValid(method, parameters[1].ParameterType))
+        throw new ArgumentException("Generic arguments not valid.");
     }
 
     private static void ValidateReader(MethodInfo method)
@@ -47,13 +50,16 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       var parameters = method.GetParameters();
       if (parameters.Length != 1)
-        throw new ArgumentException("Reader has invalid parameters count. It must have 1 parameters.");
+        throw new ArgumentException("Reader has invalid parameters count. Method must have 1 parameters.");
 
       if (parameters[0].ParameterType != typeof(Stream))
         throw new ArgumentException("Reader has invalid parameters. First parameter must be Stream.");
 
       if (method.ReturnType == typeof(void))
-        throw new ArgumentException("Reader has invalid return type. Is must return anything.");
+        throw new ArgumentException("Reader has invalid return type. Method must return anything.");
+
+      if (!IsGenericArgsValid(method, method.ReturnType))
+        throw new ArgumentException("Generic arguments not valid.");
     }
 
     private static void ValidateSkiper(MethodInfo method)
@@ -63,13 +69,23 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       var parameters = method.GetParameters();
       if (parameters.Length != 1)
-        throw new ArgumentException("Skiper has invalid parameters count. It must have 1 parameters.");
+        throw new ArgumentException("Skiper has invalid parameters count. Method must have 1 parameters.");
 
       if (parameters[0].ParameterType != typeof(Stream))
         throw new ArgumentException("Skiper has invalid parameters. First parameter must be Stream.");
 
       if (method.ReturnType != typeof(void))
-        throw new ArgumentException("Skiper has invalid return type. Is must return nothing.");
+        throw new ArgumentException("Skiper has invalid return type. Method must return nothing.");
+
+      if (method.IsGenericMethod)
+        throw new ArgumentException("Skiper not suppots generics.");
+    }
+
+    private static bool IsGenericArgsValid(MethodInfo method, Type type)
+    {
+      var methoodGenericParameters = method.GetGenericArguments();
+      var paramGenericParameters = type.GetGenericArguments();
+      return paramGenericParameters.Length >= methoodGenericParameters.Length;
     }
   }
 }

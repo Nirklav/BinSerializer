@@ -36,7 +36,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       var elementTypeId = SerializerTypes.GetTypeIdImpl(elementType);
 
       var builder = new StringBuilder();
-      builder.Append(_typeId);
+      builder.Append(TypeId);
       builder.Append('[');
       builder.Append(elementTypeId);
       builder.Append(']');

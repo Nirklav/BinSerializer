@@ -12,6 +12,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public const string NullToken = "nil";
     public const string TypeEndToken = "end";
     public const string ArrayToken = "arr";
+    public const string DictionaryToken = "dct";
+    public const string ListToken = "lst";
 
     // Types map
     private static readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
@@ -42,6 +44,9 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       AddType<string>();
       AddType<DateTime>();
 
+      AddSystemType(typeof(Dictionary<,>));
+      AddSystemType(typeof(List<>));
+
       AddArrayType();
       AddUserDefinedTypes();
     }
@@ -49,26 +54,39 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     private static void AddType<T>()
     {
-      var type = typeof(T);
+      AddType(typeof(T), typeof(StreamExtensions));
+    }
+
+    [SecurityCritical]
+    private static void AddSystemType(Type type)
+    {
+      AddType(type, typeof(SystemTypesProcess));
+    }
+
+    [SecurityCritical]
+    private static void AddType(Type type, Type owner)
+    {
       MethodInfo reader = null;
       MethodInfo writer = null;
       MethodInfo skiper = null;
+      string name = null;
 
-      foreach (var method in typeof(StreamExtensions).GetMethods())
+      foreach (var method in owner.GetMethods())
       {
-        var attrib = method.GetCustomAttribute<StreamExtensionAttribute>(false);
+        var attrib = method.GetCustomAttribute<ProcessAttribute>(false);
         if (attrib == null || attrib.Type != type)
           continue;
 
+        name = attrib.Name;
         switch (attrib.Kind)
         {
-          case StreamExtensionKind.Read: reader = method; break;
-          case StreamExtensionKind.Write: writer = method; break;
-          case StreamExtensionKind.Skip: skiper = method; break;
+          case ProcessKind.Read: reader = method; break;
+          case ProcessKind.Write: writer = method; break;
+          case ProcessKind.Skip: skiper = method; break;
         }
       }
 
-      var description = new BinTypeDescription(type, type.Name);
+      var description = new BinTypeDescription(type, name ?? type.Name);
       var version = new BinTypeVersion(0, 0);
       var process = new BinTypeProcess(writer, reader, skiper);
 
@@ -262,7 +280,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         var info = GetTypeInfo(type);
-        return info.Writer;
+        return info.GetWriter(type);
       }
       finally
       {
@@ -277,7 +295,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         var info = GetTypeInfo(type);
-        return info.Reader;
+        return info.GetReader(type);
       }
       finally
       {
@@ -292,7 +310,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         var info = GetTypeInfo(type);
-        return info.Skiper;
+        return info.GetSkiper(type);
       }
       finally
       {

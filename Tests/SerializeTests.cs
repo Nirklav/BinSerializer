@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
 using System.IO;
 using ThirtyNineEighty.BinarySerializer;
 
@@ -433,6 +434,32 @@ namespace Tests
       var output = SerializeDeserialize(input);
 
       Assert.IsFalse(ReferenceEquals(output.First, output.Second));
+    }
+
+    [TestMethod]
+    public void DictionarySerializeTest()
+    {
+      var dict = new Dictionary<int, string>();
+      dict.Add(1, "1");
+      dict.Add(2, "2");
+
+      var result = SerializeDeserialize(dict);
+
+      Assert.AreEqual(dict[1], result[1]);
+      Assert.AreEqual(dict[2], result[2]);
+    }
+
+    [TestMethod]
+    public void ListSerializeTest()
+    {
+      var list = new List<string>();
+      list.Add("1");
+      list.Add("2");
+
+      var result = SerializeDeserialize(list);
+
+      Assert.AreEqual(list[0], result[0]);
+      Assert.AreEqual(list[1], result[1]);
     }
   }
 }

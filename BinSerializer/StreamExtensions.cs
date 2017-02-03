@@ -5,25 +5,6 @@ using System.Text;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  enum StreamExtensionKind
-  {
-    Write,
-    Read,
-    Skip
-  }
-
-  [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-  class StreamExtensionAttribute : Attribute
-  {
-    public Type Type { get; private set; }
-    public StreamExtensionKind Kind { get; private set; }
-
-    public StreamExtensionAttribute(Type type, StreamExtensionKind kind)
-    {
-      Type = type;
-      Kind = kind;
-    }
-  }
 
   public static class StreamExtensions
   {
@@ -31,7 +12,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region writers
     [SecuritySafeCritical]
-    [StreamExtension(typeof(bool), StreamExtensionKind.Write)]
+    [Process(typeof(bool), ProcessKind.Write)]
     public static void Write(this Stream stream, bool obj)
     {
       BSDebug.TraceStart("WriteBoolean", stream.Position);
@@ -42,7 +23,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(byte), StreamExtensionKind.Write)]
+    [Process(typeof(byte), ProcessKind.Write)]
     public static void Write(this Stream stream, byte obj)
     {
       BSDebug.TraceStart("WriteByte", stream.Position);
@@ -53,7 +34,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(sbyte), StreamExtensionKind.Write)]
+    [Process(typeof(sbyte), ProcessKind.Write)]
     public static void Write(this Stream stream, sbyte obj)
     {
       BSDebug.TraceStart("WriteSByte", stream.Position);
@@ -64,7 +45,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(short), StreamExtensionKind.Write)]
+    [Process(typeof(short), ProcessKind.Write)]
     public static void Write(this Stream stream, short obj)
     {
       BSDebug.TraceStart("WriteInt16", stream.Position);
@@ -79,7 +60,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ushort), StreamExtensionKind.Write)]
+    [Process(typeof(ushort), ProcessKind.Write)]
     public static void Write(this Stream stream, ushort obj)
     {
       BSDebug.TraceStart("WriteUInt16", stream.Position);
@@ -94,7 +75,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(char), StreamExtensionKind.Write)]
+    [Process(typeof(char), ProcessKind.Write)]
     public static void Write(this Stream stream, char obj)
     {
       BSDebug.TraceStart("WriteChar", stream.Position);
@@ -109,7 +90,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(int), StreamExtensionKind.Write)]
+    [Process(typeof(int), ProcessKind.Write)]
     public static void Write(this Stream stream, int obj)
     {
       BSDebug.TraceStart("WriteInt32", stream.Position);
@@ -128,7 +109,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(uint), StreamExtensionKind.Write)]
+    [Process(typeof(uint), ProcessKind.Write)]
     public static void Write(this Stream stream, uint obj)
     {
       BSDebug.TraceStart("WriteUInt32", stream.Position);
@@ -147,7 +128,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(long), StreamExtensionKind.Write)]
+    [Process(typeof(long), ProcessKind.Write)]
     public static void Write(this Stream stream, long obj)
     {
       BSDebug.TraceStart("WriteInt64", stream.Position);
@@ -174,7 +155,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ulong), StreamExtensionKind.Write)]
+    [Process(typeof(ulong), ProcessKind.Write)]
     public static void Write(this Stream stream, ulong obj)
     {
       BSDebug.TraceStart("WriteUInt64", stream.Position);
@@ -202,7 +183,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(float), StreamExtensionKind.Write)]
+    [Process(typeof(float), ProcessKind.Write)]
     public static void Write(this Stream stream, float obj)
     {
       BSDebug.TraceStart("WriteSingle", stream.Position);
@@ -213,7 +194,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(double), StreamExtensionKind.Write)]
+    [Process(typeof(double), ProcessKind.Write)]
     public static void Write(this Stream stream, double obj)
     {
       BSDebug.TraceStart("WriteDouble", stream.Position);
@@ -224,7 +205,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(decimal), StreamExtensionKind.Write)]
+    [Process(typeof(decimal), ProcessKind.Write)]
     public static void Write(this Stream stream, decimal obj)
     {
       BSDebug.TraceStart("WriteDecimal", stream.Position);
@@ -235,7 +216,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(string), StreamExtensionKind.Write)]
+    [Process(typeof(string), ProcessKind.Write)]
     public static void Write(this Stream stream, string obj)
     {
       BSDebug.TraceStart("WriteString", stream.Position);
@@ -248,7 +229,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(DateTime), StreamExtensionKind.Write)]
+    [Process(typeof(DateTime), ProcessKind.Write)]
     public static void Write(this Stream stream, DateTime obj)
     {
       BSDebug.TraceStart("WriteDateTime", stream.Position);
@@ -262,7 +243,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region readers
     [SecuritySafeCritical]
-    [StreamExtension(typeof(bool), StreamExtensionKind.Read)]
+    [Process(typeof(bool), ProcessKind.Read)]
     public static bool ReadBoolean(this Stream stream)
     {
       BSDebug.TraceStart("ReadBoolean", stream.Position);
@@ -274,7 +255,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(byte), StreamExtensionKind.Read)]
+    [Process(typeof(byte), ProcessKind.Read)]
     public static byte ReadByte(this Stream stream)
     {
       BSDebug.TraceStart("ReadByte", stream.Position);
@@ -286,7 +267,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(sbyte), StreamExtensionKind.Read)]
+    [Process(typeof(sbyte), ProcessKind.Read)]
     public static sbyte ReadSByte(this Stream stream)
     {
       BSDebug.TraceStart("ReadSByte", stream.Position);
@@ -298,7 +279,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(short), StreamExtensionKind.Read)]
+    [Process(typeof(short), ProcessKind.Read)]
     public static short ReadInt16(this Stream stream)
     {
       BSDebug.TraceStart("ReadInt16", stream.Position);
@@ -315,7 +296,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ushort), StreamExtensionKind.Read)]
+    [Process(typeof(ushort), ProcessKind.Read)]
     public static ushort ReadUInt16(this Stream stream)
     {
       BSDebug.TraceStart("ReadUInt16", stream.Position);
@@ -332,7 +313,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(char), StreamExtensionKind.Read)]
+    [Process(typeof(char), ProcessKind.Read)]
     public static char ReadChar(this Stream stream)
     {
       BSDebug.TraceStart("ReadChar", stream.Position);
@@ -349,7 +330,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(int), StreamExtensionKind.Read)]
+    [Process(typeof(int), ProcessKind.Read)]
     public static int ReadInt32(this Stream stream)
     {
       BSDebug.TraceStart("ReadInt32", stream.Position);
@@ -370,7 +351,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(uint), StreamExtensionKind.Read)]
+    [Process(typeof(uint), ProcessKind.Read)]
     public static uint ReadUInt32(this Stream stream)
     {
       BSDebug.TraceStart("ReadUInt32", stream.Position);
@@ -391,7 +372,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(long), StreamExtensionKind.Read)]
+    [Process(typeof(long), ProcessKind.Read)]
     public static long ReadInt64(this Stream stream)
     {
       BSDebug.TraceStart("ReadInt64", stream.Position);
@@ -420,7 +401,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ulong), StreamExtensionKind.Read)]
+    [Process(typeof(ulong), ProcessKind.Read)]
     public static ulong ReadUInt64(this Stream stream)
     {
       BSDebug.TraceStart("ReadUInt64", stream.Position);
@@ -449,7 +430,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(float), StreamExtensionKind.Read)]
+    [Process(typeof(float), ProcessKind.Read)]
     public static float ReadSingle(this Stream stream)
     {
       BSDebug.TraceStart("ReadSingle", stream.Position);
@@ -461,7 +442,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(double), StreamExtensionKind.Read)]
+    [Process(typeof(double), ProcessKind.Read)]
     public static double ReadDouble(this Stream stream)
     {
       BSDebug.TraceStart("ReadDouble", stream.Position);
@@ -473,7 +454,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(decimal), StreamExtensionKind.Read)]
+    [Process(typeof(decimal), ProcessKind.Read)]
     public static decimal ReadDecimal(this Stream stream)
     {
       BSDebug.TraceStart("ReadDecimal", stream.Position);
@@ -485,7 +466,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(string), StreamExtensionKind.Read)]
+    [Process(typeof(string), ProcessKind.Read)]
     public static string ReadString(this Stream stream)
     {
       BSDebug.TraceStart("ReadString", stream.Position);
@@ -500,7 +481,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(DateTime), StreamExtensionKind.Read)]
+    [Process(typeof(DateTime), ProcessKind.Read)]
     public static DateTime ReadDateTime(this Stream stream)
     {
       BSDebug.TraceStart("ReadDateTime", stream.Position);
@@ -514,7 +495,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region skipers
     [SecuritySafeCritical]
-    [StreamExtension(typeof(bool), StreamExtensionKind.Skip)]
+    [Process(typeof(bool), ProcessKind.Skip)]
     public static void SkipBoolean(this Stream stream)
     {
       BSDebug.TraceStart("SkipBoolean", stream.Position);
@@ -525,7 +506,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(byte), StreamExtensionKind.Skip)]
+    [Process(typeof(byte), ProcessKind.Skip)]
     public static void SkipByte(this Stream stream)
     {
       BSDebug.TraceStart("SkipByte", stream.Position);
@@ -536,7 +517,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(sbyte), StreamExtensionKind.Skip)]
+    [Process(typeof(sbyte), ProcessKind.Skip)]
     public static void SkipSByte(this Stream stream)
     {
       BSDebug.TraceStart("SkipSByte", stream.Position);
@@ -547,7 +528,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(short), StreamExtensionKind.Skip)]
+    [Process(typeof(short), ProcessKind.Skip)]
     public static void SkipInt16(this Stream stream)
     {
       BSDebug.TraceStart("SkipInt16", stream.Position);
@@ -558,7 +539,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ushort), StreamExtensionKind.Skip)]
+    [Process(typeof(ushort), ProcessKind.Skip)]
     public static void SkipUInt16(this Stream stream)
     {
       BSDebug.TraceStart("SkipUInt16", stream.Position);
@@ -569,7 +550,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(char), StreamExtensionKind.Skip)]
+    [Process(typeof(char), ProcessKind.Skip)]
     public static void SkipChar(this Stream stream)
     {
       BSDebug.TraceStart("SkipChar", stream.Position);
@@ -580,7 +561,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(int), StreamExtensionKind.Skip)]
+    [Process(typeof(int), ProcessKind.Skip)]
     public static void SkipInt32(this Stream stream)
     {
       BSDebug.TraceStart("SkipInt32", stream.Position);
@@ -591,7 +572,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(uint), StreamExtensionKind.Skip)]
+    [Process(typeof(uint), ProcessKind.Skip)]
     public static void SkipUInt32(this Stream stream)
     {
       BSDebug.TraceStart("SkipUInt32", stream.Position);
@@ -602,7 +583,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(long), StreamExtensionKind.Skip)]
+    [Process(typeof(long), ProcessKind.Skip)]
     public static void SkipInt64(this Stream stream)
     {
       BSDebug.TraceStart("SkipInt64", stream.Position);
@@ -613,7 +594,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(ulong), StreamExtensionKind.Skip)]
+    [Process(typeof(ulong), ProcessKind.Skip)]
     public static void SkipUInt64(this Stream stream)
     {
       BSDebug.TraceStart("SkipUInt64", stream.Position);
@@ -624,7 +605,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(float), StreamExtensionKind.Skip)]
+    [Process(typeof(float), ProcessKind.Skip)]
     public static void SkipSingle(this Stream stream)
     {
       BSDebug.TraceStart("SkipSingle", stream.Position);
@@ -635,7 +616,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(double), StreamExtensionKind.Skip)]
+    [Process(typeof(double), ProcessKind.Skip)]
     public static void SkipDouble(this Stream stream)
     {
       BSDebug.TraceStart("SkipDouble", stream.Position);
@@ -646,7 +627,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(decimal), StreamExtensionKind.Skip)]
+    [Process(typeof(decimal), ProcessKind.Skip)]
     public static void SkipDecimal(this Stream stream)
     {
       BSDebug.TraceStart("SkipDecimal", stream.Position);
@@ -657,7 +638,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(string), StreamExtensionKind.Skip)]
+    [Process(typeof(string), ProcessKind.Skip)]
     public static void SkipString(this Stream stream)
     {
       BSDebug.TraceStart("SkipString", stream.Position);
@@ -669,7 +650,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [StreamExtension(typeof(DateTime), StreamExtensionKind.Skip)]
+    [Process(typeof(DateTime), ProcessKind.Skip)]
     public static void SkipDateTime(this Stream stream)
     {
       BSDebug.TraceStart("SkipDateTime", stream.Position);

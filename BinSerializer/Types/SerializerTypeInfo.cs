@@ -6,15 +6,15 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 {
   class SerializerTypeInfo
   {
-    protected readonly TypeInfo _type;
-    protected readonly string _typeId;
+    protected readonly TypeInfo Type;
+    protected readonly string TypeId;
 
     public readonly int Version;
     public readonly int MinSupportedVersion;
 
-    public readonly MethodInfo Writer;
-    public readonly MethodInfo Reader;
-    public readonly MethodInfo Skiper;
+    private readonly MethodInfo _writer;
+    private readonly MethodInfo _reader;
+    private readonly MethodInfo _skiper;
 
     [SecurityCritical]
     public SerializerTypeInfo(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process)
@@ -26,32 +26,47 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentNullException("version");
 
       // Set
-      _type = description.Type.GetTypeInfo();
-      _typeId = description.TypeId;
+      Type = description.Type.GetTypeInfo();
+      TypeId = description.TypeId;
 
       Version = version.Version;
       MinSupportedVersion = version.MinSipportedVersion;
 
       if (process != null)
       {
-        Writer = process.Writer;
-        Reader = process.Reader;
-        Skiper = process.Skiper;
+        _writer = process.Writer;
+        _reader = process.Reader;
+        _skiper = process.Skiper;
       }
+    }
+
+    public virtual MethodInfo GetWriter(Type notNormalizedType)
+    {
+      return _writer;
+    }
+
+    public virtual MethodInfo GetReader(Type notNormalizedType)
+    {
+      return _reader;
+    }
+
+    public virtual MethodInfo GetSkiper(Type notNormalizedType)
+    {
+      return _skiper;
     }
 
     // Must be called read under SerializerTypes read lock
     [SecuritySafeCritical]
     public virtual Type GetType(string notNormalizedTypeId)
     {
-      return _type;
+      return Type;
     }
 
     // Must be called read under SerializerTypes read lock
     [SecuritySafeCritical]
     public virtual string GetTypeId(Type notNormalizedType)
     {
-      return _typeId;
+      return TypeId;
     }
   }
 }
