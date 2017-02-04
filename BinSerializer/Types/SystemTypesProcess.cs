@@ -15,7 +15,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       public TValue Value;
     }
 
-    [Process(typeof(Dictionary<,>), ProcessKind.Write)]
+    [Process(SerializerTypes.DictionaryToken, typeof(Dictionary<,>), ProcessKind.Write)]
     public static void WriteDictionary<TKey, TValue>(Stream stream, Dictionary<TKey, TValue> value)
     {
       stream.Write(value.Count);
@@ -29,7 +29,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
     }
 
-    [Process(typeof(Dictionary<,>), ProcessKind.Read)]
+    [Process(SerializerTypes.DictionaryToken, typeof(Dictionary<,>), ProcessKind.Read)]
     public static Dictionary<TKey, TValue> ReadDictionary<TKey, TValue>(Stream stream)
     {
       var count = stream.ReadInt32();
@@ -42,7 +42,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return result;
     }
 
-    [Process(typeof(List<>), ProcessKind.Write)]
+    [Process(SerializerTypes.ListToken, typeof(List<>), ProcessKind.Write)]
     public static void WriteList<T>(Stream stream, List<T> value)
     {
       stream.Write(value.Count);
@@ -50,7 +50,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         BinSerializer.Serialize(stream, current);
     }
 
-    [Process(typeof(List<>), ProcessKind.Read)]
+    [Process(SerializerTypes.ListToken, typeof(List<>), ProcessKind.Read)]
     public static List<T> ReadList<T>(Stream stream)
     {
       var count = stream.ReadInt32();
