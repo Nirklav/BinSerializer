@@ -807,7 +807,7 @@ namespace ThirtyNineEighty.BinarySerializer
         if (!declaredIds.Add(pair.Attribute.Id))
           throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
         if (pair.Field.IsInitOnly)
-          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {0}", pair.Field.Name, pair.Field.DeclaringType));
+          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {1}", pair.Field.Name, pair.Field.DeclaringType));
         yield return pair.Field;
       }
     }

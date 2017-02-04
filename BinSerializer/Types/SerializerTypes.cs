@@ -24,6 +24,10 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static readonly ConcurrentDictionary<string, Type> _typeIdToTypeCache = new ConcurrentDictionary<string, Type>();
     private static readonly ConcurrentDictionary<Type, string> _typeToTypeIdCache = new ConcurrentDictionary<Type, string>();
 
+    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToSkipersCache = new ConcurrentDictionary<Type, MethodInfo>();
+ 
     #region initialization
     [SecuritySafeCritical]
     static SerializerTypes()
@@ -132,6 +136,9 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       if (description.Type.IsArray)
         throw new ArgumentException("Can't register array.");
+
+      if (process != null && !process.IsValid(description.Type))
+        throw new ArgumentException("Process is not valid");
 
       SerializerTypeInfo typeInfo;
       if (description.Type == typeof(Array))
@@ -279,8 +286,20 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       _locker.EnterReadLock();
       try
       {
+        // Try get from cache
+        MethodInfo writer;
+        if (_typeToWritersCache.TryGetValue(type, out writer))
+          return writer;
+
+        // Build
         var info = GetTypeInfo(type);
-        return info.GetWriter(type);
+        writer = info.GetWriter(type);
+
+        // Add to cache
+        _typeToWritersCache.TryAdd(type, writer);
+
+        // Result
+        return writer;
       }
       finally
       {
@@ -294,8 +313,20 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       _locker.EnterReadLock();
       try
       {
+        // Try get from cache
+        MethodInfo reader;
+        if (_typeToReadersCache.TryGetValue(type, out reader))
+          return reader;
+
+        // Build
         var info = GetTypeInfo(type);
-        return info.GetReader(type);
+        reader = info.GetReader(type);
+
+        // Add to cache
+        _typeToReadersCache.TryAdd(type, reader);
+
+        // Result
+        return reader;
       }
       finally
       {
@@ -309,8 +340,20 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       _locker.EnterReadLock();
       try
       {
+        // Try get from cache
+        MethodInfo skiper;
+        if (_typeToSkipersCache.TryGetValue(type, out skiper))
+          return skiper;
+
+        // Build
         var info = GetTypeInfo(type);
-        return info.GetSkiper(type);
+        skiper = info.GetSkiper(type);
+
+        // Add to cache
+        _typeToSkipersCache.TryAdd(type, skiper);
+
+        // Result
+        return skiper;
       }
       finally
       {

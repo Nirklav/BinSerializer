@@ -38,9 +38,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       if (method.ReturnType != typeof(void))
         throw new ArgumentException("Writer has invalid return type. Method must return nothing.");
-
-      if (!IsGenericArgsValid(method, parameters[1].ParameterType))
-        throw new ArgumentException("Generic arguments not valid.");
     }
 
     private static void ValidateReader(MethodInfo method)
@@ -57,9 +54,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       if (method.ReturnType == typeof(void))
         throw new ArgumentException("Reader has invalid return type. Method must return anything.");
-
-      if (!IsGenericArgsValid(method, method.ReturnType))
-        throw new ArgumentException("Generic arguments not valid.");
     }
 
     private static void ValidateSkiper(MethodInfo method)
@@ -76,16 +70,27 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       if (method.ReturnType != typeof(void))
         throw new ArgumentException("Skiper has invalid return type. Method must return nothing.");
+    }
 
-      if (method.IsGenericMethod)
-        throw new ArgumentException("Skiper not suppots generics.");
+    internal bool IsValid(Type type)
+    {
+      if (Writer != null && !IsGenericArgsValid(Writer, type))
+        return false;
+
+      if (Reader != null && !IsGenericArgsValid(Reader, type))
+        return false;
+
+      if (Skiper != null && !IsGenericArgsValid(Skiper, type))
+        return false;
+
+      return true;
     }
 
     private static bool IsGenericArgsValid(MethodInfo method, Type type)
     {
-      var methoodGenericParameters = method.GetGenericArguments();
+      var methodGenericParameters = method.GetGenericArguments();
       var paramGenericParameters = type.GetGenericArguments();
-      return paramGenericParameters.Length >= methoodGenericParameters.Length;
+      return methodGenericParameters.Length == paramGenericParameters.Length;
     }
   }
 }

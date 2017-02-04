@@ -5,7 +5,6 @@ using System.Text;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-
   public static class StreamExtensions
   {
     private static readonly DateTime _unixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);

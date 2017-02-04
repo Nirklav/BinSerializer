@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
+using System.Security;
 using ThirtyNineEighty.BinarySerializer;
 
 namespace Tests
@@ -25,6 +26,7 @@ namespace Tests
     }
     
     [TestMethod]
+    [SecurityCritical]
     public void NullTest()
     {
       var input = new NullTestType();
@@ -52,6 +54,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void FullNullTest()
     {
       var input = new FullNullTestType();
@@ -80,6 +83,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void UserDefinedStructTest()
     {
       var input = new StructContainerType();
@@ -101,6 +105,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void CycleReferenceTest()
     {
       var input = new CycleReferenceType();
@@ -133,6 +138,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void InterfaceTest()
     {
       var input = new InterfaceType();
@@ -151,6 +157,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void ArrayTest()
     {
       var input = new ArrayType();
@@ -184,6 +191,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void ArrayTest2()
     {
       var input = new ArrayType2();
@@ -214,6 +222,7 @@ namespace Tests
     }
     
     [TestMethod]
+    [SecurityCritical]
     public void GenericTypeTest()
     {
       var input = new GenericType<GenericType<int, int>, int>();
@@ -240,6 +249,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void SimpleTypesRefTest()
     {
       var input = new SimpleTypesRefTestType();
@@ -267,6 +277,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void EnumTest()
     {
       var input = new EnumTestType();
@@ -287,6 +298,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void EmptyTest()
     {
       var input = new EmptyTestType(10);
@@ -294,6 +306,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void MultipleSerializationTest()
     {
       var input1 = new EnumTestType();
@@ -360,6 +373,7 @@ namespace Tests
     }
     
     [TestMethod]
+    [SecurityCritical]
     public void InheritanceTest()
     {
       var input = new InheritorType();
@@ -425,6 +439,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void EqualsTest()
     {
       var input = new EqualsTestType();
@@ -437,6 +452,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void DictionarySerializeTest()
     {
       var dict = new Dictionary<int, string>();
@@ -450,6 +466,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void ListSerializeTest()
     {
       var list = new List<string>();
