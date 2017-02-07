@@ -50,11 +50,5 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       Type = type;
       TypeId = typeId;
     }
-
-    private BinTypeDescription(Type type, string typeId, bool unused)
-    {
-      Type = type;
-      TypeId = typeId;
-    }
   }
 }

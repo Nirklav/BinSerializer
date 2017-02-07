@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -9,6 +10,7 @@ namespace ThirtyNineEighty.BinarySerializer
     public int Version { get; set; }
     public int MinSupportedVersion { get; set; }
 
+    [SecuritySafeCritical]
     public BinTypeAttribute(string id)
     {
       if (string.IsNullOrEmpty(id))

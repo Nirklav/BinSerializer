@@ -1,4 +1,6 @@
-﻿namespace ThirtyNineEighty.BinarySerializer.Types
+﻿using System;
+
+namespace ThirtyNineEighty.BinarySerializer.Types
 {
   public sealed class BinTypeVersion
   {
@@ -7,6 +9,9 @@
 
     public BinTypeVersion(int version, int minSupportedVesrion)
     {
+      if (version < minSupportedVesrion)
+        throw new ArgumentException("version < minSupportedVesrion");
+
       Version = version;
       MinSipportedVersion = minSupportedVesrion;
     }

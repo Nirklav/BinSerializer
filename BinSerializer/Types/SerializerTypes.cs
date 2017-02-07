@@ -188,7 +188,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
     }
 
-    // Must be called read under lock
+    // Must be called under read lock
     [SecurityCritical]
     internal static string GetTypeIdImpl(Type type)
     {
@@ -225,7 +225,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
     }
 
-    // Must be called read under lock
+    // Must be called under read lock
     [SecurityCritical]
     internal static Type GetTypeImpl(string typeId)
     {

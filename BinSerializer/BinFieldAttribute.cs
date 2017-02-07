@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -6,7 +7,8 @@ namespace ThirtyNineEighty.BinarySerializer
   public sealed class BinFieldAttribute : Attribute
   {
     public string Id { get; private set; }
-    
+
+    [SecuritySafeCritical]
     public BinFieldAttribute(string id)
     {
       if (string.IsNullOrEmpty(id))

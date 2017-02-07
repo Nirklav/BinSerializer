@@ -478,5 +478,33 @@ namespace Tests
       Assert.AreEqual(list[0], result[0]);
       Assert.AreEqual(list[1], result[1]);
     }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void LongSerializeTest()
+    {
+      var l1 = 100L;
+      var l2 = long.MinValue;
+      var l3 = long.MaxValue;
+      var l4 = long.MaxValue / 2;
+
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, l1);
+      BinSerializer.Serialize(stream, l2);
+      BinSerializer.Serialize(stream, l3);
+      BinSerializer.Serialize(stream, l4);
+
+      stream.Position = 0;
+
+      var tl1 = (long)BinSerializer.Deserialize<object>(stream);
+      var tl2 = (long)BinSerializer.Deserialize<object>(stream);
+      var tl3 = (long)BinSerializer.Deserialize<object>(stream);
+      var tl4 = (long)BinSerializer.Deserialize<object>(stream);
+
+      Assert.AreEqual(l1, tl1);
+      Assert.AreEqual(l2, tl2);
+      Assert.AreEqual(l3, tl3);
+      Assert.AreEqual(l4, tl4);
+    }
   }
 }

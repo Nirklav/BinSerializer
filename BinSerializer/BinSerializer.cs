@@ -4,6 +4,7 @@ using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
+  [SecuritySafeCritical]
   public static class BinSerializer
   {
     [SecuritySafeCritical]
@@ -19,42 +20,55 @@ namespace ThirtyNineEighty.BinarySerializer
     }
   }
 
+  [SecuritySafeCritical]
   static class BinSerializer<T>
   {
-    // Simple and powerful cache
-    private static readonly Writer<T> _writerInvoker;
-    private static readonly Reader<T> _readerInvoker;
+    // Simple and powerful cache for structs
+    private static readonly Writer<T> _cachedWriter;
+    private static readonly Reader<T> _cachedReader;
 
     [SecuritySafeCritical]
     static BinSerializer()
     {
-      _writerInvoker = GetWriterInvoker();
-      _readerInvoker = GetReaderInvoker();
+      _cachedWriter = GetWriterInvoker();
+      _cachedReader = GetReaderInvoker();
+    }
+
+    [SecurityCritical]
+    private static Writer<T> GetWriterInvoker()
+    {
+      return typeof(T).IsValueType
+        ? SerializerBuilder.CreateWriter<T>(typeof(T))
+        : null;
+    }
+
+    [SecurityCritical]
+    private static Reader<T> GetReaderInvoker()
+    {
+      return typeof(T).IsValueType
+        ? SerializerBuilder.CreateReader<T>(typeof(T))
+        : null;
     }
 
     #region serialization
     [SecuritySafeCritical]
     public static void Serialize(Stream stream, T obj)
     {
-      using (var watcher = new RefWriterWatcher(true))
-        _writerInvoker(stream, obj);
-    }
-
-    [SecurityCritical]
-    private static Writer<T> GetWriterInvoker()
-    {
-      // Value type writer can be cached
-      if (typeof(T).IsValueType)
-        return SerializerBuilder.GetWriter<T>();
-      return Write;
+      using (new RefWriterWatcher(true))
+        Write(stream, obj);
     }
 
     [SecurityCritical]
     private static void Write(Stream stream, T obj)
     {
-      var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
-      var writer = SerializerBuilder.GetWriter(type);
-      writer(stream, obj);
+      if (_cachedWriter != null)
+        _cachedWriter(stream, obj);
+      else
+      {
+        var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
+        var writer = SerializerBuilder.CreateWriter<T>(type);
+        writer(stream, obj);
+      }
     }
     #endregion
 
@@ -62,16 +76,8 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     public static T Deserialize(Stream stream)
     {
-      using (var watcher = new RefReaderWatcher(true))
-        return _readerInvoker(stream);
-    }
-
-    [SecurityCritical]
-    private static Reader<T> GetReaderInvoker()
-    {
-      if (typeof(T).IsValueType)
-        return SerializerBuilder.GetReader<T>();
-      return Read;
+      using (new RefReaderWatcher(true))
+        return Read(stream);
     }
 
     [SecurityCritical]
@@ -84,8 +90,11 @@ namespace ThirtyNineEighty.BinarySerializer
 
       BSDebug.TraceStart("... " + type.Name);
 
-      var reader = SerializerBuilder.GetReader(type);
-      return (T)reader(stream);
+      if (_cachedReader != null)
+        return _cachedReader(stream);
+
+      var reader = SerializerBuilder.CreateReader<T>(type);
+      return reader(stream);
     }
     #endregion
   }

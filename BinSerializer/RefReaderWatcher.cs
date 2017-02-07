@@ -32,15 +32,18 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    public static void AddRef(int refId, object reference)
+    public static void AddRef<T>(int refId, T reference)
     {
       _idToRef.Add(refId, reference);
     }
 
     [SecuritySafeCritical]
-    public static bool TryGetRef(int refId, out object reference)
+    public static bool TryGetRef<T>(int refId, out T reference)
     {
-      return _idToRef.TryGetValue(refId, out reference);
+      object objRef;
+      var result = _idToRef.TryGetValue(refId, out objRef);
+      reference = (T)objRef;
+      return result;
     }
 
     [SecuritySafeCritical]
