@@ -7,14 +7,14 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   struct RefWriterWatcher : IDisposable
   {
-    sealed class RefEqualityComparer : IEqualityComparer<object>
+    private sealed class RefEqualityComparer : IEqualityComparer<object>
     {
-      public new bool Equals(object x, object y)
+      bool IEqualityComparer<object>.Equals(object x, object y)
       {
         return ReferenceEquals(x, y);
       }
 
-      public int GetHashCode(object obj)
+      int IEqualityComparer<object>.GetHashCode(object obj)
       {
         return RuntimeHelpers.GetHashCode(obj);
       }

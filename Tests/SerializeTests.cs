@@ -426,9 +426,9 @@ namespace Tests
           return false;
         if (ReferenceEquals(obj, this))
           return true;
-        var e = obj as EqualsEntityTestType;
-        if (e == null)
+        if (GetType() != obj.GetType())
           return false;
+        var e = (EqualsEntityTestType)obj;
         return e.Id == Id;
       }
 
@@ -489,10 +489,10 @@ namespace Tests
       var l4 = long.MaxValue / 2;
 
       var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, l1);
-      BinSerializer.Serialize(stream, l2);
-      BinSerializer.Serialize(stream, l3);
-      BinSerializer.Serialize(stream, l4);
+      BinSerializer.Serialize(stream, (object)l1);
+      BinSerializer.Serialize(stream, (object)l2);
+      BinSerializer.Serialize(stream, (object)l3);
+      BinSerializer.Serialize(stream, (object)l4);
 
       stream.Position = 0;
 
