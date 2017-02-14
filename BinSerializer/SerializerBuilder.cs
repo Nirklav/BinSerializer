@@ -245,9 +245,9 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Ldstr, fieldAttribute.Id);  // Load field id
           il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(string)));
 
-          var serialize = typeof(BinSerializer)
-            .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public)
-            .MakeGenericMethod(field.FieldType);
+          var serialize = typeof(BinSerializer<>)
+            .MakeGenericType(field.FieldType)
+            .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
           // Write field
           il.Emit(OpCodes.Ldarg_0);           // Load stream
@@ -281,7 +281,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
       var getLowerBound = typeof(Array).GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
-      var serialize = typeof(BinSerializer).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
+      var serialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
       il.DeclareLocal(typeof(int));  // Array length
       il.DeclareLocal(typeof(int));  // Array index
@@ -559,9 +559,9 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, stringEquals);                             // Compare
           il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);                  // These aren't the field your looking for
 
-          var deserialize = typeof(BinSerializer)
-            .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public)
-            .MakeGenericMethod(field.FieldType);
+          var deserialize = typeof(BinSerializer<>)
+            .MakeGenericType(field.FieldType)
+            .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
           // Prepeare stack to field set
           if (type.IsValueType)
@@ -602,7 +602,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
       var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var deserialize = typeof(BinSerializer).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(elementType);
+      var deserialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
       // array type id already was readed
 

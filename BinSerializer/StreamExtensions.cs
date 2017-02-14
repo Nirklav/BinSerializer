@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security;
-using System.Text;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -221,8 +221,8 @@ namespace ThirtyNineEighty.BinarySerializer
       BSDebug.TraceStart("WriteString", stream.Position);
 
       stream.Write(obj.Length);
-      foreach (var ch in obj)
-        stream.Write(ch);
+      for (int i = 0; i < obj.Length; ++i)
+        stream.Write(obj[i]);
 
       BSDebug.TraceEnd("WriteString", stream.Position);
     }
@@ -313,6 +313,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     [SecuritySafeCritical]
     [Process(typeof(char), ProcessKind.Read)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char ReadChar(this Stream stream)
     {
       BSDebug.TraceStart("ReadChar", stream.Position);
@@ -471,12 +472,20 @@ namespace ThirtyNineEighty.BinarySerializer
       BSDebug.TraceStart("ReadString", stream.Position);
 
       var length = stream.ReadInt32();
-      var builder = new StringBuilder(length);
-      for (int i = 0; i < length; i++)
-        builder.Append(stream.ReadChar());
+      var bufferLength = length * sizeof(char);
+      var buffer = Buffers.Get(bufferLength);
+      stream.Read(buffer, 0, bufferLength);
 
       BSDebug.TraceEnd("ReadString", stream.Position);
-      return builder.ToString();
+     
+      unsafe
+      {
+        fixed (byte* bufferPtr = buffer)
+        {
+          var bufferCharPtr = (char*)bufferPtr;
+          return new string(bufferCharPtr, 0, length);
+        }
+      }
     }
 
     [SecuritySafeCritical]
@@ -662,40 +671,65 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region helpers
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe int ToInt(float f)
     {
       return *(int*)(&f);
     }
 
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe long ToLong(double f)
     {
       return *(long*)(&f);
     }
 
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe long ToLong(decimal f)
     {
       return *(long*)(&f);
     }
 
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe float ToSingle(int i)
     {
       return *(float*)(&i);
     }
 
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe double ToDouble(long i)
     {
       return *(double*)(&i);
     }
 
     [SecuritySafeCritical]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe decimal ToDecimal(long i)
     {
       return *(decimal*)(&i);
     }
     #endregion
+  }
+
+  internal static class Buffers
+  {
+    private const int MaxSize = 1024 * 2;
+
+    [ThreadStatic]
+    private static byte[] _buffer;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte[] Get(int size)
+    {
+      if (size > MaxSize)
+        return new byte[size];
+      var buffer = _buffer; // Get thread static field oly once per call
+      if (buffer == null)
+        _buffer = buffer = new byte[MaxSize];
+      return buffer;
+    }
   }
 }

@@ -53,7 +53,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return method;
     }
 
-    // Must be called read under SerializerTypes read lock
+    // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
     public override Type GetType(string notNormalizedTypeId)
     {
@@ -66,7 +66,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return Type.MakeGenericType(types);
     }
 
-    // Must be called read under SerializerTypes read lock
+    // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
     public override string GetTypeId(Type notNormalizedType)
     {

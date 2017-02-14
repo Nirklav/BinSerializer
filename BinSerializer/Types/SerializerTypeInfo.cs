@@ -55,14 +55,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return _skiper;
     }
 
-    // Must be called read under SerializerTypes read lock
+    // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
     public virtual Type GetType(string notNormalizedTypeId)
     {
       return Type;
     }
 
-    // Must be called read under SerializerTypes read lock
+    // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
     public virtual string GetTypeId(Type notNormalizedType)
     {
