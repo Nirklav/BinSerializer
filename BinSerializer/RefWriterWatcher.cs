@@ -20,37 +20,45 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
-    [ThreadStatic]
-    private static Dictionary<object, int> _refIds;
+    private sealed class Container
+    {
+      public readonly Dictionary<object, int> RefIds;
+      public int LastRefId;
+      public bool RootCreated;
+
+      public Container()
+      {
+        RefIds = new Dictionary<object, int>(new RefEqualityComparer());
+      }
+    }
 
     [ThreadStatic]
-    private static int _lastRefId;
-
-    [ThreadStatic]
-    private static bool _rootCreated;
+    private static Container _container;
 
     private readonly bool _isRoot;
 
     [SecuritySafeCritical]
     public RefWriterWatcher(bool unsued)
     {
-      if (_refIds == null)
-        _refIds = new Dictionary<object, int>(new RefEqualityComparer());
+      var container = _container;
+      if (container == null)
+        _container = container = new Container();
 
-      if (_rootCreated)
+      if (container.RootCreated)
       {
         _isRoot = false;
       }
       else
       {
         _isRoot = true;
-        _rootCreated = true;
+        container.RootCreated = true;
       }
     }
 
     [SecuritySafeCritical]
     public static int GetRefId(object reference, out bool created)
     {
+      var container = _container;
       if (reference == null)
       {
         created = false;
@@ -58,13 +66,13 @@ namespace ThirtyNineEighty.BinarySerializer
       }
 
       int refId;
-      if (_refIds.TryGetValue(reference, out refId))
+      if (container.RefIds.TryGetValue(reference, out refId))
       {
         created = false;
         return refId;
       }
       
-      _refIds.Add(reference, refId = ++_lastRefId);
+      container.RefIds.Add(reference, refId = ++container.LastRefId);
       created = true;
       return refId;
     }
@@ -74,9 +82,10 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       if (_isRoot)
       {
-        _refIds.Clear();
-        _lastRefId = 0;
-        _rootCreated = false;
+        var container = _container;
+        container.RefIds.Clear();
+        container.LastRefId = 0;
+        container.RootCreated = false;
       }
     }
   }

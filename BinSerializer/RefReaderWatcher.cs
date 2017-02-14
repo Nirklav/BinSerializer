@@ -6,42 +6,51 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   struct RefReaderWatcher : IDisposable
   {
-    [ThreadStatic]
-    private static Dictionary<int, object> _idToRef;
+    private sealed class Container
+    {
+      public readonly Dictionary<int, object> IdToRef;
+      public bool RootCreated;
+
+      public Container()
+      {
+        IdToRef = new Dictionary<int, object>();
+      }
+    }
 
     [ThreadStatic]
-    private static bool _rootCreated;
+    private static Container _container;
 
     private readonly bool _isRoot;
 
     [SecuritySafeCritical]
     public RefReaderWatcher(bool unsued)
     {
-      if (_idToRef == null)
-        _idToRef = new Dictionary<int, object>();
+      var container = _container;
+      if (container == null)
+        _container = container = new Container();
 
-      if (_rootCreated)
+      if (container.RootCreated)
       {
         _isRoot = false;
       }
       else
       {
         _isRoot = true;
-        _rootCreated = true;
+        container.RootCreated = true;
       }
     }
 
     [SecuritySafeCritical]
     public static void AddRef<T>(int refId, T reference)
     {
-      _idToRef.Add(refId, reference);
+      _container.IdToRef.Add(refId, reference);
     }
 
     [SecuritySafeCritical]
     public static bool TryGetRef<T>(int refId, out T reference)
     {
       object objRef;
-      var result = _idToRef.TryGetValue(refId, out objRef);
+      var result = _container.IdToRef.TryGetValue(refId, out objRef);
       reference = (T)objRef;
       return result;
     }
@@ -51,8 +60,9 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       if (_isRoot)
       {
-        _idToRef.Clear();
-        _rootCreated = false;
+        var container = _container;
+        container.IdToRef.Clear();
+        container.RootCreated = false;
       }
     }
   }
