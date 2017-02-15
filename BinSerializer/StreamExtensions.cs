@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
@@ -220,9 +221,26 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteString", stream.Position);
 
-      stream.Write(obj.Length);
-      for (int i = 0; i < obj.Length; ++i)
-        stream.Write(obj[i]);
+      var length = obj.Length;
+
+      // Write length
+      stream.Write(length);
+
+      var usedLength = length * sizeof(char);
+      var buffer = Buffers.Get(usedLength);
+      unsafe
+      {
+        // It work faster but unfortunately available only from .net framework 4.6
+        //fixed (char* valuePtr = value)
+        //  fixed (byte* bufferPtr = buffer)
+        //    Buffer.MemoryCopy(valuePtr, bufferPtr, buffer.Length, usedLength);
+
+        fixed (void* valuePtr = obj)
+          Marshal.Copy(new IntPtr(valuePtr), buffer, 0, usedLength);
+      }
+
+      // Write data
+      stream.Write(buffer, 0, usedLength);
 
       BSDebug.TraceEnd("WriteString", stream.Position);
     }
