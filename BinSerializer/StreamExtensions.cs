@@ -221,26 +221,43 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteString", stream.Position);
 
+      const int useBufferFrom = 7;
+
       var length = obj.Length;
+      var bytesLength = length * sizeof(char);
 
       // Write length
       stream.Write(length);
 
-      var usedLength = length * sizeof(char);
-      var buffer = Buffers.Get(usedLength);
-      unsafe
+      if (length < useBufferFrom)
       {
-        // It work faster but unfortunately available only from .net framework 4.6
-        //fixed (char* valuePtr = value)
-        //  fixed (byte* bufferPtr = buffer)
-        //    Buffer.MemoryCopy(valuePtr, bufferPtr, buffer.Length, usedLength);
-
-        fixed (void* valuePtr = obj)
-          Marshal.Copy(new IntPtr(valuePtr), buffer, 0, usedLength);
+        unsafe
+        {
+          fixed (char* objPtr = obj)
+          {
+            var valueBytePtr = (byte*)objPtr;
+            for (int i = 0; i < bytesLength; i++)
+              stream.WriteByte(valueBytePtr[i]);
+          }
+        }
       }
+      else
+      {
+        var buffer = Buffers.Get(bytesLength);
+        unsafe
+        {
+          // It work faster but unfortunately available only from .net framework 4.6
+          //fixed (char* valuePtr = value)
+          //  fixed (byte* bufferPtr = buffer)
+          //    Buffer.MemoryCopy(valuePtr, bufferPtr, buffer.Length, usedLength);
 
-      // Write data
-      stream.Write(buffer, 0, usedLength);
+          fixed (void* objPtr = obj)
+            Marshal.Copy(new IntPtr(objPtr), buffer, 0, bytesLength);
+        }
+
+        // Write data
+        stream.Write(buffer, 0, bytesLength);
+      }
 
       BSDebug.TraceEnd("WriteString", stream.Position);
     }
