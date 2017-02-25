@@ -23,7 +23,6 @@ namespace ThirtyNineEighty.BinarySerializer
   [SecuritySafeCritical]
   static class BinSerializer<T>
   {
-    // Simple and powerful cache for structs
     private static readonly Writer<T> _cachedWriter;
     private static readonly Reader<T> _cachedReader;
 
@@ -49,53 +48,41 @@ namespace ThirtyNineEighty.BinarySerializer
         ? SerializerBuilder.CreateReader<T>(typeof(T))
         : null;
     }
-
-    #region serialization
+    
     [SecuritySafeCritical]
     public static void Serialize(Stream stream, T obj)
     {
       using (new RefWriterWatcher(true))
-        Write(stream, obj);
-    }
-
-    [SecurityCritical]
-    private static void Write(Stream stream, T obj)
-    {
-      if (_cachedWriter != null)
-        _cachedWriter(stream, obj);
-      else
       {
-        var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
-        var writer = SerializerBuilder.CreateWriter<T>(type);
-        writer(stream, obj);
+        if (_cachedWriter != null)
+          _cachedWriter(stream, obj);
+        else
+        {
+          var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
+          var writer = SerializerBuilder.CreateWriter<T>(type);
+          writer(stream, obj);
+        }
       }
     }
-    #endregion
 
-    #region deserialization
     [SecuritySafeCritical]
     public static T Deserialize(Stream stream)
     {
       using (new RefReaderWatcher(true))
-        return Read(stream);
+      {
+        BSDebug.TraceStart("Start read of ...");
+        var typeId = stream.ReadString();   
+        BSDebug.TraceStart("... " + typeId);
+
+        if (_cachedReader != null)
+          return _cachedReader(stream);
+        else
+        {
+          var type = SerializerTypes.GetType(typeId);
+          var reader = SerializerBuilder.CreateReader<T>(type);
+          return reader(stream);
+        }
+      }
     }
-
-    [SecurityCritical]
-    private static T Read(Stream stream)
-    {
-      BSDebug.TraceStart("Start read of ...");
-
-      var typeId = stream.ReadString();
-      var type = SerializerTypes.GetType(typeId);
-
-      BSDebug.TraceStart("... " + type.Name);
-
-      if (_cachedReader != null)
-        return _cachedReader(stream);
-
-      var reader = SerializerBuilder.CreateReader<T>(type);
-      return reader(stream);
-    }
-    #endregion
   }
 }
