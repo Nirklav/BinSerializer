@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Security;
+using System.Security.Permissions;
 using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
@@ -8,12 +9,16 @@ namespace ThirtyNineEighty.BinarySerializer
   public static class BinSerializer
   {
     [SecuritySafeCritical]
+    [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
+    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
     public static void Serialize<T>(Stream stream, T obj)
     {
       BinSerializer<T>.Serialize(stream, obj);
     }
 
     [SecuritySafeCritical]
+    [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
+    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
     public static T Deserialize<T>(Stream stream)
     {
       return BinSerializer<T>.Deserialize(stream);

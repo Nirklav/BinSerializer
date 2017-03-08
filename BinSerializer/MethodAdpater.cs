@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -40,6 +41,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static readonly ConcurrentDictionary<TypePair, Delegate> _cachedWriters = new ConcurrentDictionary<TypePair, Delegate>();
     private static readonly ConcurrentDictionary<TypePair, Delegate> _cachedReaders = new ConcurrentDictionary<TypePair, Delegate>(); 
 
+    [SecurityCritical]
     public static Writer<TTo> CastWriter<TTo>(Delegate writer, Type from)
     {
       // Check if equals
@@ -70,6 +72,7 @@ namespace ThirtyNineEighty.BinarySerializer
       return (Writer<TTo>)castedWriter;
     }
 
+    [SecurityCritical]
     public static Reader<TTo> CastReader<TTo>(Delegate reader, Type from)
     {
       // Check if equals
@@ -105,11 +108,13 @@ namespace ThirtyNineEighty.BinarySerializer
   {
     private readonly Writer<TFrom> _writer;
 
+    [SecurityCritical]
     public WriterMethodAdapter(Delegate writer)
     {
       _writer = (Writer<TFrom>)writer;
     }
 
+    [SecuritySafeCritical]
     public void Write(Stream stream, TTo value)
     {
       _writer(stream, (TFrom)(object)value);
@@ -120,11 +125,13 @@ namespace ThirtyNineEighty.BinarySerializer
   {
     private readonly Reader<TFrom> _reader;
 
+    [SecurityCritical]
     public ReaderMethodAdapter(Delegate reader)
     {
       _reader = (Reader<TFrom>)reader;
     }
 
+    [SecuritySafeCritical]
     public TTo Read(Stream stream)
     {
       return (TTo)(object)_reader(stream);

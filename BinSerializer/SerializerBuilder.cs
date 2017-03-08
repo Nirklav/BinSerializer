@@ -160,11 +160,11 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var methodName = string.Format("{0}_writer", type);
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
       if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
@@ -396,11 +396,11 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var methodName = string.Format("{0}_reader", type);
       if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
       if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, type, true);
+        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
       if (type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, type.GetElementType(), true);
+        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
 
       if (dynamicMethod == null)
         throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
