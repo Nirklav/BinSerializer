@@ -5,20 +5,20 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 {
   public sealed class BinTypeDescription
   {
-    private static readonly HashSet<string> _reservedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> ReservedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
       SerializerTypes.NullToken,
       SerializerTypes.TypeEndToken
     };
 
-    private static readonly Dictionary<string, Type> _reservedTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, Type> ReservedTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
     {
       { SerializerTypes.ArrayToken, typeof(Array) },
       { SerializerTypes.DictionaryToken, typeof(Dictionary<,>) },
       { SerializerTypes.ListToken, typeof(List<>) },
     };
 
-    private static readonly HashSet<char> _reservedChars = new HashSet<char>()
+    private static readonly HashSet<char> ReservedChars = new HashSet<char>
     {
       '[', ']',
       '(', ')',
@@ -35,15 +35,15 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Only opened generic types can be registered.");
 
       // Type id validation
-      if (_reservedIds.Contains(typeId))
+      if (ReservedIds.Contains(typeId))
         throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
 
       Type reservedType;
-      if (_reservedTypes.TryGetValue(typeId, out reservedType) && reservedType != type)
+      if (ReservedTypes.TryGetValue(typeId, out reservedType) && reservedType != type)
         throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
 
       foreach (var ch in typeId)
-        if (_reservedChars.Contains(ch))
+        if (ReservedChars.Contains(ch))
           throw new ArgumentException("Id contains reserved symbols '[',']','(',')','<','>'.");
 
       // Set

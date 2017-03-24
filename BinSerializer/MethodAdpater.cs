@@ -38,8 +38,8 @@ namespace ThirtyNineEighty.BinarySerializer
       }
     }
 
-    private static readonly ConcurrentDictionary<TypePair, Delegate> _cachedWriters = new ConcurrentDictionary<TypePair, Delegate>();
-    private static readonly ConcurrentDictionary<TypePair, Delegate> _cachedReaders = new ConcurrentDictionary<TypePair, Delegate>(); 
+    private static readonly ConcurrentDictionary<TypePair, Delegate> CachedWriters = new ConcurrentDictionary<TypePair, Delegate>();
+    private static readonly ConcurrentDictionary<TypePair, Delegate> CachedReaders = new ConcurrentDictionary<TypePair, Delegate>(); 
 
     [SecurityCritical]
     public static Writer<TTo> CastWriter<TTo>(Delegate writer, Type from)
@@ -56,7 +56,7 @@ namespace ThirtyNineEighty.BinarySerializer
       // Check cache
       var key = new TypePair(from, to);
       Delegate castedWriter;
-      if (_cachedWriters.TryGetValue(key, out castedWriter))
+      if (CachedWriters.TryGetValue(key, out castedWriter))
         return (Writer<TTo>)castedWriter;
 
       // Create
@@ -66,7 +66,7 @@ namespace ThirtyNineEighty.BinarySerializer
       castedWriter = write.CreateDelegate(typeof(Writer<TTo>), adapter);
 
       // Cache
-      _cachedWriters.TryAdd(key, castedWriter);
+      CachedWriters.TryAdd(key, castedWriter);
 
       // Result
       return (Writer<TTo>)castedWriter;
@@ -87,7 +87,7 @@ namespace ThirtyNineEighty.BinarySerializer
       // Check cache
       var key = new TypePair(from, to);
       Delegate castedReader;
-      if (_cachedReaders.TryGetValue(key, out castedReader))
+      if (CachedReaders.TryGetValue(key, out castedReader))
         return (Reader<TTo>)castedReader;
 
       // Create
@@ -97,7 +97,7 @@ namespace ThirtyNineEighty.BinarySerializer
       castedReader = write.CreateDelegate(typeof(Reader<TTo>), adapter);
 
       // Cache
-      _cachedReaders.TryAdd(key, castedReader);
+      CachedReaders.TryAdd(key, castedReader);
 
       // Result
       return (Reader<TTo>)castedReader;

@@ -8,7 +8,7 @@ namespace ThirtyNineEighty.BinarySerializer
 {
   public static class StreamExtensions
   {
-    private static readonly DateTime _unixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     #region writers
     [SecuritySafeCritical]
@@ -283,7 +283,7 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteDateTime", stream.Position);
 
-      var seconds = obj - _unixEpochStart;
+      var seconds = obj - UnixEpochStart;
       stream.Write((long)seconds.TotalSeconds);
 
       BSDebug.TraceEnd("WriteDateTime", stream.Position);
@@ -340,9 +340,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b1 = stream.ReadByte();
       var b2 = stream.ReadByte();
 
-      var value = 0;
-      value |= b1;
-      value |= (b2 << 8);
+      var value = b1 | (b2 << 8);
 
       BSDebug.TraceEnd("ReadInt16", stream.Position);
       return (short)value;
@@ -358,9 +356,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b1 = stream.ReadByte();
       var b2 = stream.ReadByte();
 
-      var value = 0;
-      value |= b1;
-      value |= (b2 << 8);
+      var value = b1 | (b2 << 8);
 
       BSDebug.TraceEnd("ReadUInt16", stream.Position);
       return (ushort)value;
@@ -376,9 +372,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b1 = stream.ReadByte();
       var b2 = stream.ReadByte();
 
-      var value = 0;
-      value |= b1;
-      value |= (b2 << 8);
+      var value = b1 | (b2 << 8);
 
       BSDebug.TraceEnd("ReadChar", stream.Position);
       return (char)value;
@@ -396,11 +390,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b3 = stream.ReadByte();
       var b4 = stream.ReadByte();
 
-      var value = 0;
-      value |= b1;
-      value |= (b2 << 8);
-      value |= (b3 << 16);
-      value |= (b4 << 24);
+      var value = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
 
       BSDebug.TraceEnd("ReadInt32", stream.Position);
       return value;
@@ -418,11 +408,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b3 = stream.ReadByte();
       var b4 = stream.ReadByte();
 
-      var value = 0;
-      value |= b1;
-      value |= (b2 << 8);
-      value |= (b3 << 16);
-      value |= (b4 << 24);
+      var value = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
 
       BSDebug.TraceEnd("ReadUInt32", stream.Position);
       return (uint)value;
@@ -444,16 +430,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b7 = (long)stream.ReadByte();
       var b8 = (long)stream.ReadByte();
 
-      var value = 0L;
-      value |= b1;
-      value |= (b2 << 8);
-      value |= (b3 << 16);
-      value |= (b4 << 24);
-      value |= (b5 << 32);
-      value |= (b6 << 40);
-      value |= (b7 << 48);
-      value |= (b8 << 56);
-
+      var value = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24) | (b5 << 32) | (b6 << 40) | (b7 << 48) | (b8 << 56);
       BSDebug.TraceEnd("ReadInt64", stream.Position);
       return value;
     }
@@ -474,15 +451,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var b7 = (long)stream.ReadByte();
       var b8 = (long)stream.ReadByte();
 
-      var value = 0L;
-      value |= b1;
-      value |= (b2 << 8);
-      value |= (b3 << 16);
-      value |= (b4 << 24);
-      value |= (b5 << 32);
-      value |= (b6 << 40);
-      value |= (b7 << 48);
-      value |= (b8 << 56);
+      var value = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24) | (b5 << 32) | (b6 << 40) | (b7 << 48) | (b8 << 56);
 
       BSDebug.TraceEnd("ReadUInt64", stream.Position);
       return (ulong)value;
@@ -561,7 +530,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var unixTime = stream.ReadInt64();
 
       BSDebug.TraceEnd("ReadDateTime", stream.Position);
-      return _unixEpochStart.AddSeconds(unixTime);
+      return UnixEpochStart.AddSeconds(unixTime);
     }
     #endregion
 

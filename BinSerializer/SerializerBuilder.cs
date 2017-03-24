@@ -142,14 +142,14 @@ namespace ThirtyNineEighty.BinarySerializer
 
   static class SerializerBuilder
   {
-    private static readonly ConcurrentDictionary<Type, Delegate> _writers = new ConcurrentDictionary<Type, Delegate>();
-    private static readonly ConcurrentDictionary<Type, Delegate> _readers = new ConcurrentDictionary<Type, Delegate>();
+    private static readonly ConcurrentDictionary<Type, Delegate> Writers = new ConcurrentDictionary<Type, Delegate>();
+    private static readonly ConcurrentDictionary<Type, Delegate> Readers = new ConcurrentDictionary<Type, Delegate>();
 
     #region writer
     [SecurityCritical]
     public static Writer<T> CreateWriter<T>(Type type)
     {
-      var method = _writers.GetOrAdd(type, CreateWriterMethod);
+      var method = Writers.GetOrAdd(type, CreateWriterMethod);
       return MethodAdpater.CastWriter<T>(method, type);
     }
 
@@ -385,7 +385,7 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     public static Reader<T> CreateReader<T>(Type type)
     {
-      var method = _readers.GetOrAdd(type, CreateReaderMethod);
+      var method = Readers.GetOrAdd(type, CreateReaderMethod);
       return MethodAdpater.CastReader<T>(method, type);
     }
 

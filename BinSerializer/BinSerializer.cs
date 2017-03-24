@@ -28,20 +28,20 @@ namespace ThirtyNineEighty.BinarySerializer
   [SecuritySafeCritical]
   static class BinSerializer<T>
   {
-    private static readonly Writer<T> _cachedWriter;
-    private static readonly Reader<T> _cachedReader;
+    private static readonly Writer<T> CachedWriter;
+    private static readonly Reader<T> CachedReader;
 
     [SecuritySafeCritical]
     static BinSerializer()
     {
-      _cachedWriter = GetWriterInvoker();
-      _cachedReader = GetReaderInvoker();
+      CachedWriter = GetWriterInvoker();
+      CachedReader = GetReaderInvoker();
     }
 
     [SecurityCritical]
     private static Writer<T> GetWriterInvoker()
     {
-      return typeof(T).IsValueType
+      return typeof(T).IsValueType || typeof(T).IsSealed
         ? SerializerBuilder.CreateWriter<T>(typeof(T))
         : null;
     }
@@ -49,18 +49,18 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Reader<T> GetReaderInvoker()
     {
-      return typeof(T).IsValueType
+      return typeof(T).IsValueType || typeof(T).IsSealed
         ? SerializerBuilder.CreateReader<T>(typeof(T))
         : null;
     }
-    
+
     [SecuritySafeCritical]
     public static void Serialize(Stream stream, T obj)
     {
       using (new RefWriterWatcher(true))
       {
-        if (_cachedWriter != null)
-          _cachedWriter(stream, obj);
+        if (CachedWriter != null)
+          CachedWriter(stream, obj);
         else
         {
           var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
@@ -76,17 +76,17 @@ namespace ThirtyNineEighty.BinarySerializer
       using (new RefReaderWatcher(true))
       {
         BSDebug.TraceStart("Start read of ...");
+
         var typeId = stream.ReadString();   
+
         BSDebug.TraceStart("... " + typeId);
 
-        if (_cachedReader != null)
-          return _cachedReader(stream);
-        else
-        {
-          var type = SerializerTypes.GetType(typeId);
-          var reader = SerializerBuilder.CreateReader<T>(type);
-          return reader(stream);
-        }
+        if (CachedReader != null)
+          return CachedReader(stream);
+
+        var type = SerializerTypes.GetType(typeId);
+        var reader = SerializerBuilder.CreateReader<T>(type);
+        return reader(stream);
       }
     }
   }

@@ -16,17 +16,17 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public const string ListToken = "lst";
 
     // Types map
-    private static readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
-    private static readonly Dictionary<string, SerializerTypeInfo> _typesById = new Dictionary<string, SerializerTypeInfo>();
-    private static readonly Dictionary<Type, SerializerTypeInfo> _typesByType = new Dictionary<Type, SerializerTypeInfo>();
+    private static readonly ReaderWriterLockSlim Locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+    private static readonly Dictionary<string, SerializerTypeInfo> TypesById = new Dictionary<string, SerializerTypeInfo>();
+    private static readonly Dictionary<Type, SerializerTypeInfo> TypesByType = new Dictionary<Type, SerializerTypeInfo>();
 
     // Runtime cache
-    private static readonly ConcurrentDictionary<string, Type> _typeIdToTypeCache = new ConcurrentDictionary<string, Type>();
-    private static readonly ConcurrentDictionary<Type, string> _typeToTypeIdCache = new ConcurrentDictionary<Type, string>();
+    private static readonly ConcurrentDictionary<string, Type> TypeIdToTypeCache = new ConcurrentDictionary<string, Type>();
+    private static readonly ConcurrentDictionary<Type, string> TypeToTypeIdCache = new ConcurrentDictionary<Type, string>();
 
-    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> _typeToSkipersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToSkipersCache = new ConcurrentDictionary<Type, MethodInfo>();
  
     #region initialization
     [SecuritySafeCritical]
@@ -128,10 +128,10 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     private static void AddTypeImpl(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process)
     {
-      if (_typesById.ContainsKey(description.TypeId))
+      if (TypesById.ContainsKey(description.TypeId))
         throw new InvalidOperationException(string.Format("TypeInfo with this id already exist {0} by type {1}.", description.TypeId, description.Type));
 
-      if (_typesByType.ContainsKey(description.Type))
+      if (TypesByType.ContainsKey(description.Type))
         throw new InvalidOperationException(string.Format("TypeInfo with this Type already exist {0} by id {1}.", description.Type, description.TypeId));
 
       if (description.Type.IsArray)
@@ -148,8 +148,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       else
         typeInfo = new SerializerTypeInfo(description, version, process);
 
-      _typesById.Add(description.TypeId, typeInfo);
-      _typesByType.Add(description.Type, typeInfo);
+      TypesById.Add(description.TypeId, typeInfo);
+      TypesByType.Add(description.Type, typeInfo);
     }
 
     [SecuritySafeCritical]
@@ -161,14 +161,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecuritySafeCritical]
     public static void AddType(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process)
     {
-      _locker.EnterWriteLock();
+      Locker.EnterWriteLock();
       try
       {
         AddTypeImpl(description, version, process);
       }
       finally
       {
-        _locker.ExitWriteLock();
+        Locker.ExitWriteLock();
       }
     }
     #endregion
@@ -177,14 +177,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static string GetTypeId(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         return GetTypeIdImpl(type);
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
 
@@ -194,7 +194,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     {
       // Try return from cache
       string cachedTypeId;
-      if (_typeToTypeIdCache.TryGetValue(type, out cachedTypeId))
+      if (TypeToTypeIdCache.TryGetValue(type, out cachedTypeId))
         return cachedTypeId;
 
       // Resolve type id
@@ -202,8 +202,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       var typeId = info.GetTypeId(type);
 
       // Add to cache
-      _typeToTypeIdCache.TryAdd(type, typeId);
-      _typeIdToTypeCache.TryAdd(typeId, type);
+      TypeToTypeIdCache.TryAdd(type, typeId);
+      TypeIdToTypeCache.TryAdd(typeId, type);
 
       // Result
       return typeId;
@@ -214,14 +214,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecuritySafeCritical]
     public static Type GetType(string typeId)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         return GetTypeImpl(typeId);
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
 
@@ -231,7 +231,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     {
       // Try return from cache
       Type cachedType;
-      if (_typeIdToTypeCache.TryGetValue(typeId, out cachedType))
+      if (TypeIdToTypeCache.TryGetValue(typeId, out cachedType))
         return cachedType;
 
       // Resolve type
@@ -239,8 +239,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       var type = info.GetType(typeId);
 
       // Add to cache
-      _typeToTypeIdCache.TryAdd(type, typeId);
-      _typeIdToTypeCache.TryAdd(typeId, type);
+      TypeToTypeIdCache.TryAdd(type, typeId);
+      TypeIdToTypeCache.TryAdd(typeId, type);
 
       // Result
       return type;
@@ -251,7 +251,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static int GetVersion(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         var info = GetTypeInfo(type);
@@ -259,14 +259,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
 
     [SecurityCritical]
     internal static int GetMinSupported(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         var info = GetTypeInfo(type);
@@ -274,7 +274,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
     #endregion
@@ -283,12 +283,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static MethodInfo TryGetWriter(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         // Try get from cache
         MethodInfo writer;
-        if (_typeToWritersCache.TryGetValue(type, out writer))
+        if (TypeToWritersCache.TryGetValue(type, out writer))
           return writer;
 
         // Build
@@ -296,26 +296,26 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         writer = info.GetWriter(type);
 
         // Add to cache
-        _typeToWritersCache.TryAdd(type, writer);
+        TypeToWritersCache.TryAdd(type, writer);
 
         // Result
         return writer;
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
 
     [SecurityCritical]
     internal static MethodInfo TryGetReader(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         // Try get from cache
         MethodInfo reader;
-        if (_typeToReadersCache.TryGetValue(type, out reader))
+        if (TypeToReadersCache.TryGetValue(type, out reader))
           return reader;
 
         // Build
@@ -323,26 +323,26 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         reader = info.GetReader(type);
 
         // Add to cache
-        _typeToReadersCache.TryAdd(type, reader);
+        TypeToReadersCache.TryAdd(type, reader);
 
         // Result
         return reader;
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
 
     [SecurityCritical]
     internal static MethodInfo TryGetSkiper(Type type)
     {
-      _locker.EnterReadLock();
+      Locker.EnterReadLock();
       try
       {
         // Try get from cache
         MethodInfo skiper;
-        if (_typeToSkipersCache.TryGetValue(type, out skiper))
+        if (TypeToSkipersCache.TryGetValue(type, out skiper))
           return skiper;
 
         // Build
@@ -350,14 +350,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         skiper = info.GetSkiper(type);
 
         // Add to cache
-        _typeToSkipersCache.TryAdd(type, skiper);
+        TypeToSkipersCache.TryAdd(type, skiper);
 
         // Result
         return skiper;
       }
       finally
       {
-        _locker.ExitReadLock();
+        Locker.ExitReadLock();
       }
     }
     #endregion
@@ -369,7 +369,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     {
       var normalizedType = Normalize(type);
       SerializerTypeInfo info;
-      if (!_typesByType.TryGetValue(normalizedType, out info))
+      if (!TypesByType.TryGetValue(normalizedType, out info))
         throw new ArgumentException(string.Format("TypeInfo not found. For type {0}", type));
       return info;
     }
@@ -380,7 +380,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     {
       var normalizedTypeId = Normalize(typeId);
       SerializerTypeInfo info;
-      if (!_typesById.TryGetValue(normalizedTypeId, out info))
+      if (!TypesById.TryGetValue(normalizedTypeId, out info))
         throw new ArgumentException(string.Format("TypeInfo not found. For typeId {0}", typeId));
       return info;
     }
