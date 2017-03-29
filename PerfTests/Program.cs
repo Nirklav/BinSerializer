@@ -71,7 +71,7 @@ namespace PerfTests
         sw.Stop();
         sw.Reset();
         sw.Start();
-
+      
         TestBin(ref t);
         Console.WriteLine("Bin: {0}ms", sw.ElapsedMilliseconds);
         
@@ -82,6 +82,8 @@ namespace PerfTests
         TestFormatter(ref t);
         Console.WriteLine("Formatter: {0}ms", sw.ElapsedMilliseconds);
       }
+
+      Console.ReadLine();
     }
 
     private static void TestBin(ref Test test)

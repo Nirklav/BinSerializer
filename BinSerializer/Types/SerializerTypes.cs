@@ -24,75 +24,89 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static readonly ConcurrentDictionary<string, Type> TypeIdToTypeCache = new ConcurrentDictionary<string, Type>();
     private static readonly ConcurrentDictionary<Type, string> TypeToTypeIdCache = new ConcurrentDictionary<Type, string>();
 
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToSkipersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
  
     #region initialization
     [SecuritySafeCritical]
     static SerializerTypes()
     {
-      AddType<bool>();
-      AddType<byte>();
-      AddType<sbyte>();
-      AddType<short>();
-      AddType<ushort>();
-      AddType<char>();
-      AddType<int>();
-      AddType<uint>();
-      AddType<long>();
-      AddType<ulong>();
-      AddType<float>();
-      AddType<double>();
-      AddType<decimal>();
-      AddType<string>();
-      AddType<DateTime>();
+      AddStreamType<bool>();
+      AddStreamType<byte>();
+      AddStreamType<sbyte>();
+      AddStreamType<short>();
+      AddStreamType<ushort>();
+      AddStreamType<char>();
+      AddStreamType<int>();
+      AddStreamType<uint>();
+      AddStreamType<long>();
+      AddStreamType<ulong>();
+      AddStreamType<float>();
+      AddStreamType<double>();
+      AddStreamType<decimal>();
+      AddStreamType<string>();
+      AddStreamType<DateTime>();
 
-      AddSystemType(typeof(Dictionary<,>));
-      AddSystemType(typeof(List<>));
+      AddType(typeof(Dictionary<,>));
+      AddType(typeof(List<>));
 
       AddArrayType();
       AddUserDefinedTypes();
     }
 
     [SecurityCritical]
-    private static void AddType<T>()
+    private static void AddStreamType<T>()
     {
-      AddType(typeof(T), typeof(StreamExtensions));
-    }
-
-    [SecurityCritical]
-    private static void AddSystemType(Type type)
-    {
-      AddType(type, typeof(SystemTypesProcess));
-    }
-
-    [SecurityCritical]
-    private static void AddType(Type type, Type owner)
-    {
+      var type = typeof(T);
       MethodInfo reader = null;
       MethodInfo writer = null;
       MethodInfo skiper = null;
-      string name = null;
 
-      foreach (var method in owner.GetMethods())
+      foreach (var method in typeof(BinStreamExtensions).GetMethods())
       {
-        var attrib = method.GetCustomAttribute<ProcessAttribute>(false);
+        var attrib = method.GetCustomAttribute<BinStreamExtensionAttribute>(false);
+        if (attrib == null || attrib.Type != type)
+          continue;
+
+        switch (attrib.Kind)
+        {
+          case StreamExtensionKind.Read: reader = method; break;
+          case StreamExtensionKind.Write: writer = method; break;
+          case StreamExtensionKind.Skip: skiper = method; break;
+        }
+      }
+
+      var description = new BinTypeDescription(type, type.Name);
+      var version = new BinTypeVersion(0, 0);
+      var process = BinTypeProcess.CreateStreamProcess(writer, reader, skiper);
+
+      AddTypeImpl(description, version, process);
+    }
+
+    [SecurityCritical]
+    private static void AddType(Type type)
+    {
+      string name = null;
+      MethodInfo reader = null;
+      MethodInfo writer = null;
+
+      foreach (var method in typeof(BinTypeExtensions).GetMethods())
+      {
+        var attrib = method.GetCustomAttribute<BinTypeExtensionAttribute>(false);
         if (attrib == null || attrib.Type != type)
           continue;
 
         name = attrib.Name;
         switch (attrib.Kind)
         {
-          case ProcessKind.Read: reader = method; break;
-          case ProcessKind.Write: writer = method; break;
-          case ProcessKind.Skip: skiper = method; break;
+          case TypeExtensionKind.Read: reader = method; break;
+          case TypeExtensionKind.Write: writer = method; break;
         }
       }
 
       var description = new BinTypeDescription(type, name ?? type.Name);
       var version = new BinTypeVersion(0, 0);
-      var process = new BinTypeProcess(writer, reader, skiper);
+      var process = BinTypeProcess.CreateTypeProcess(writer, reader);
 
       AddTypeImpl(description, version, process);
     }
@@ -279,24 +293,71 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     }
     #endregion
 
-    #region get writer/reader/skiper
+    #region get streamWriter/streamReader/streamSkiper
     [SecurityCritical]
-    internal static MethodInfo TryGetWriter(Type type)
+    internal static MethodInfo TryGetStreamWriter(Type type)
+    {
+      Locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.StreamWriter;
+      }
+      finally
+      {
+        Locker.ExitReadLock();
+      }
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetStreamReader(Type type)
+    {
+      Locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.StreamReader;
+      }
+      finally
+      {
+        Locker.ExitReadLock();
+      }
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetStreamSkiper(Type type)
+    {
+      Locker.EnterReadLock();
+      try
+      {
+        var info = GetTypeInfo(type);
+        return info.StreamSkiper;
+      }
+      finally
+      {
+        Locker.ExitReadLock();
+      }
+    }
+    #endregion
+
+    #region get typeWriter/typeReader
+    [SecurityCritical]
+    internal static MethodInfo TryGetTypeWriter(Type type)
     {
       Locker.EnterReadLock();
       try
       {
         // Try get from cache
         MethodInfo writer;
-        if (TypeToWritersCache.TryGetValue(type, out writer))
+        if (TypeToTypeWritersCache.TryGetValue(type, out writer))
           return writer;
 
         // Build
         var info = GetTypeInfo(type);
-        writer = info.GetWriter(type);
+        writer = info.GetTypeWriter(type);
 
         // Add to cache
-        TypeToWritersCache.TryAdd(type, writer);
+        TypeToTypeWritersCache.TryAdd(type, writer);
 
         // Result
         return writer;
@@ -308,52 +369,25 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     }
 
     [SecurityCritical]
-    internal static MethodInfo TryGetReader(Type type)
+    internal static MethodInfo TryGetTypeReader(Type type)
     {
       Locker.EnterReadLock();
       try
       {
         // Try get from cache
         MethodInfo reader;
-        if (TypeToReadersCache.TryGetValue(type, out reader))
+        if (TypeToTypeReadersCache.TryGetValue(type, out reader))
           return reader;
 
         // Build
         var info = GetTypeInfo(type);
-        reader = info.GetReader(type);
+        reader = info.GetTypeReader(type);
 
         // Add to cache
-        TypeToReadersCache.TryAdd(type, reader);
+        TypeToTypeReadersCache.TryAdd(type, reader);
 
         // Result
         return reader;
-      }
-      finally
-      {
-        Locker.ExitReadLock();
-      }
-    }
-
-    [SecurityCritical]
-    internal static MethodInfo TryGetSkiper(Type type)
-    {
-      Locker.EnterReadLock();
-      try
-      {
-        // Try get from cache
-        MethodInfo skiper;
-        if (TypeToSkipersCache.TryGetValue(type, out skiper))
-          return skiper;
-
-        // Build
-        var info = GetTypeInfo(type);
-        skiper = info.GetSkiper(type);
-
-        // Add to cache
-        TypeToSkipersCache.TryAdd(type, skiper);
-
-        // Result
-        return skiper;
       }
       finally
       {

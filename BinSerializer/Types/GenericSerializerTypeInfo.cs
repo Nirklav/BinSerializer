@@ -22,22 +22,16 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Type id must be declared as non generic");
     }
 
-    public override MethodInfo GetWriter(Type notNormalizedType)
+    public override MethodInfo GetTypeWriter(Type notNormalizedType)
     {
-      var writer = base.GetWriter(notNormalizedType);
+      var writer = base.GetTypeWriter(notNormalizedType);
       return GetMethod(writer, notNormalizedType);
     }
 
-    public override MethodInfo GetReader(Type notNormalizedType)
+    public override MethodInfo GetTypeReader(Type notNormalizedType)
     {
-      var reader = base.GetReader(notNormalizedType);
+      var reader = base.GetTypeReader(notNormalizedType);
       return GetMethod(reader, notNormalizedType);
-    }
-
-    public override MethodInfo GetSkiper(Type notNormalizedType)
-    {
-      var skiper = base.GetSkiper(notNormalizedType);
-      return GetMethod(skiper, notNormalizedType);
     }
 
     private static MethodInfo GetMethod(MethodInfo method, Type notNormalizedType)

@@ -12,9 +12,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public readonly int Version;
     public readonly int MinSupportedVersion;
 
-    private readonly MethodInfo _writer;
-    private readonly MethodInfo _reader;
-    private readonly MethodInfo _skiper;
+    public readonly MethodInfo StreamWriter;
+    public readonly MethodInfo StreamReader;
+    public readonly MethodInfo StreamSkiper;
+
+    private readonly MethodInfo _typeWriter;
+    private readonly MethodInfo _typeReader;
 
     [SecurityCritical]
     public SerializerTypeInfo(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process)
@@ -34,25 +37,23 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       if (process != null)
       {
-        _writer = process.Writer;
-        _reader = process.Reader;
-        _skiper = process.Skiper;
+        StreamWriter = process.StreamWriter;
+        StreamReader = process.StreamReader;
+        StreamSkiper = process.StreamSkiper;
+
+        _typeWriter = process.TypeWriter;
+        _typeReader = process.TypeReader;
       }
     }
 
-    public virtual MethodInfo GetWriter(Type notNormalizedType)
+    public virtual MethodInfo GetTypeWriter(Type notNormalizedType)
     {
-      return _writer;
+      return _typeWriter;
     }
 
-    public virtual MethodInfo GetReader(Type notNormalizedType)
+    public virtual MethodInfo GetTypeReader(Type notNormalizedType)
     {
-      return _reader;
-    }
-
-    public virtual MethodInfo GetSkiper(Type notNormalizedType)
-    {
-      return _skiper;
+      return _typeReader;
     }
 
     // Must be called under SerializerTypes read lock

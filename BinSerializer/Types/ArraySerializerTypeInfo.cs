@@ -13,7 +13,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       if (description.Type != typeof(Array))
         throw new ArgumentException("Type must be an array.");
 
-      if (!string.Equals(description.TypeId, SerializerTypes.ArrayToken, StringComparison.OrdinalIgnoreCase))
+      if (!string.Equals(description.TypeId, SerializerTypes.ArrayToken, StringComparison.Ordinal))
         throw new ArgumentException("TypeId must be an array.");
     }
 

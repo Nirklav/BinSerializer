@@ -481,6 +481,20 @@ namespace Tests
 
     [TestMethod]
     [SecurityCritical]
+    public void ListRefSerializeTest()
+    {
+      var listlist = new List<List<string>>();
+      var list = new List<string>();
+
+      listlist.Add(list);
+      listlist.Add(list);
+
+      var result = SerializeDeserialize(listlist);
+      Assert.IsTrue(ReferenceEquals(result[0], result[1]));
+    }
+
+    [TestMethod]
+    [SecurityCritical]
     public void LongSerializeTest()
     {
       var l1 = 100L;

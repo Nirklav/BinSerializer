@@ -6,13 +6,33 @@ using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  public static class StreamExtensions
+  enum StreamExtensionKind
+  {
+    Write,
+    Read,
+    Skip
+  }
+
+  [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+  class BinStreamExtensionAttribute : Attribute
+  {
+    public Type Type { get; private set; }
+    public StreamExtensionKind Kind { get; private set; }
+
+    public BinStreamExtensionAttribute(Type type, StreamExtensionKind kind)
+    {
+      Type = type;
+      Kind = kind;
+    }
+  }
+
+  public static class BinStreamExtensions
   {
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     #region writers
     [SecuritySafeCritical]
-    [Process(typeof(bool), ProcessKind.Write)]
+    [BinStreamExtension(typeof(bool), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, bool obj)
     {
@@ -24,7 +44,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(byte), ProcessKind.Write)]
+    [BinStreamExtension(typeof(byte), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, byte obj)
     {
@@ -36,7 +56,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(sbyte), ProcessKind.Write)]
+    [BinStreamExtension(typeof(sbyte), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, sbyte obj)
     {
@@ -48,7 +68,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(short), ProcessKind.Write)]
+    [BinStreamExtension(typeof(short), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, short obj)
     {
@@ -64,7 +84,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ushort), ProcessKind.Write)]
+    [BinStreamExtension(typeof(ushort), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, ushort obj)
     {
@@ -80,7 +100,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(char), ProcessKind.Write)]
+    [BinStreamExtension(typeof(char), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, char obj)
     {
@@ -96,7 +116,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(int), ProcessKind.Write)]
+    [BinStreamExtension(typeof(int), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, int obj)
     {
@@ -116,7 +136,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(uint), ProcessKind.Write)]
+    [BinStreamExtension(typeof(uint), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, uint obj)
     {
@@ -136,7 +156,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(long), ProcessKind.Write)]
+    [BinStreamExtension(typeof(long), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, long obj)
     {
@@ -164,7 +184,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ulong), ProcessKind.Write)]
+    [BinStreamExtension(typeof(ulong), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, ulong obj)
     {
@@ -193,7 +213,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(float), ProcessKind.Write)]
+    [BinStreamExtension(typeof(float), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, float obj)
     {
@@ -205,7 +225,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(double), ProcessKind.Write)]
+    [BinStreamExtension(typeof(double), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, double obj)
     {
@@ -217,7 +237,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(decimal), ProcessKind.Write)]
+    [BinStreamExtension(typeof(decimal), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, decimal obj)
     {
@@ -229,7 +249,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(string), ProcessKind.Write)]
+    [BinStreamExtension(typeof(string), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, string obj)
     {
@@ -277,7 +297,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(DateTime), ProcessKind.Write)]
+    [BinStreamExtension(typeof(DateTime), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, DateTime obj)
     {
@@ -292,7 +312,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region readers
     [SecuritySafeCritical]
-    [Process(typeof(bool), ProcessKind.Read)]
+    [BinStreamExtension(typeof(bool), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ReadBoolean(this Stream stream)
     {
@@ -305,7 +325,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(byte), ProcessKind.Read)]
+    [BinStreamExtension(typeof(byte), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte ReadByte(this Stream stream)
     {
@@ -318,7 +338,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(sbyte), ProcessKind.Read)]
+    [BinStreamExtension(typeof(sbyte), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static sbyte ReadSByte(this Stream stream)
     {
@@ -331,7 +351,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(short), ProcessKind.Read)]
+    [BinStreamExtension(typeof(short), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static short ReadInt16(this Stream stream)
     {
@@ -347,7 +367,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ushort), ProcessKind.Read)]
+    [BinStreamExtension(typeof(ushort), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort ReadUInt16(this Stream stream)
     {
@@ -363,7 +383,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(char), ProcessKind.Read)]
+    [BinStreamExtension(typeof(char), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char ReadChar(this Stream stream)
     {
@@ -379,7 +399,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(int), ProcessKind.Read)]
+    [BinStreamExtension(typeof(int), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int ReadInt32(this Stream stream)
     {
@@ -397,7 +417,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(uint), ProcessKind.Read)]
+    [BinStreamExtension(typeof(uint), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ReadUInt32(this Stream stream)
     {
@@ -415,7 +435,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(long), ProcessKind.Read)]
+    [BinStreamExtension(typeof(long), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ReadInt64(this Stream stream)
     {
@@ -436,7 +456,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ulong), ProcessKind.Read)]
+    [BinStreamExtension(typeof(ulong), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong ReadUInt64(this Stream stream)
     {
@@ -458,7 +478,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(float), ProcessKind.Read)]
+    [BinStreamExtension(typeof(float), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float ReadSingle(this Stream stream)
     {
@@ -471,7 +491,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(double), ProcessKind.Read)]
+    [BinStreamExtension(typeof(double), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double ReadDouble(this Stream stream)
     {
@@ -484,7 +504,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(decimal), ProcessKind.Read)]
+    [BinStreamExtension(typeof(decimal), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static decimal ReadDecimal(this Stream stream)
     {
@@ -497,7 +517,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(string), ProcessKind.Read)]
+    [BinStreamExtension(typeof(string), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ReadString(this Stream stream)
     {
@@ -521,7 +541,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(DateTime), ProcessKind.Read)]
+    [BinStreamExtension(typeof(DateTime), StreamExtensionKind.Read)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DateTime ReadDateTime(this Stream stream)
     {
@@ -536,7 +556,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region skipers
     [SecuritySafeCritical]
-    [Process(typeof(bool), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(bool), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipBoolean(this Stream stream)
     {
@@ -548,7 +568,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(byte), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(byte), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipByte(this Stream stream)
     {
@@ -560,7 +580,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(sbyte), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(sbyte), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipSByte(this Stream stream)
     {
@@ -572,7 +592,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(short), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(short), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipInt16(this Stream stream)
     {
@@ -584,7 +604,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ushort), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(ushort), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipUInt16(this Stream stream)
     {
@@ -596,7 +616,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(char), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(char), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipChar(this Stream stream)
     {
@@ -608,7 +628,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(int), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(int), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipInt32(this Stream stream)
     {
@@ -620,7 +640,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(uint), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(uint), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipUInt32(this Stream stream)
     {
@@ -632,7 +652,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(long), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(long), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipInt64(this Stream stream)
     {
@@ -644,7 +664,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(ulong), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(ulong), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipUInt64(this Stream stream)
     {
@@ -656,7 +676,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(float), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(float), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipSingle(this Stream stream)
     {
@@ -668,7 +688,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(double), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(double), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipDouble(this Stream stream)
     {
@@ -680,7 +700,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(decimal), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(decimal), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipDecimal(this Stream stream)
     {
@@ -692,7 +712,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(string), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(string), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipString(this Stream stream)
     {
@@ -705,7 +725,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecuritySafeCritical]
-    [Process(typeof(DateTime), ProcessKind.Skip)]
+    [BinStreamExtension(typeof(DateTime), StreamExtensionKind.Skip)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SkipDateTime(this Stream stream)
     {

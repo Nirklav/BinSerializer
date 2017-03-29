@@ -11,9 +11,6 @@ using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  delegate void Writer<in T>(Stream stream, T obj);
-  delegate T Reader<out T>(Stream stream);
-
   /* Serialization format:
    * 
    * <=============================================>
@@ -140,6 +137,9 @@ namespace ThirtyNineEighty.BinarySerializer
    * |-------------------------------------|
    * */
 
+  delegate void Writer<in T>(Stream stream, T obj);
+  delegate T Reader<out T>(Stream stream);
+
   static class SerializerBuilder
   {
     private static readonly ConcurrentDictionary<Type, Delegate> Writers = new ConcurrentDictionary<Type, Delegate>();
@@ -156,18 +156,8 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     private static Delegate CreateWriterMethod(Type type)
     {
-      DynamicMethod dynamicMethod = null;
-
       var methodName = string.Format("{0}_writer", type);
-      if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
-      if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
-      if (type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
-
-      if (dynamicMethod == null)
-        throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
+      var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -193,7 +183,7 @@ namespace ThirtyNineEighty.BinarySerializer
       // Write type
       il.Emit(OpCodes.Ldarg_0);
       il.Emit(OpCodes.Ldstr, SerializerTypes.GetTypeId(type));
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(string)));
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
       if (!type.IsValueType)
       {
@@ -202,7 +192,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Ldarg_1);           // Load obj
         il.Emit(OpCodes.Ldloca_S, (byte)0); // Load address of bool local
         il.Emit(OpCodes.Call, getRefId);    // Obj => RefId
-        il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(int)));
+        il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(int)));
 
         // Check case when reference type already serialized.
         // If null be returned then created flag be zero too and serialization will be skipped.
@@ -215,10 +205,10 @@ namespace ThirtyNineEighty.BinarySerializer
 
       il.Emit(OpCodes.Ldarg_0);         // Load stream
       il.Emit(OpCodes.Ldc_I4, version); // Load version
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(int)));
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(int)));
 
       // If writer exist then just write
-      var writer = SerializerTypes.TryGetWriter(type);
+      var writer = SerializerTypes.TryGetStreamWriter(type) ?? SerializerTypes.TryGetTypeWriter(type);
       if (writer != null)
       {
         il.Emit(OpCodes.Ldarg_0);      // Load stream
@@ -230,29 +220,28 @@ namespace ThirtyNineEighty.BinarySerializer
         foreach (var field in GetFields(type))
         {
           var skipFieldLabel = il.DefineLabel();
-          var fieldAttribute = field.GetCustomAttribute<BinFieldAttribute>(false);
 
           // If field is null then skip it
-          if (!field.FieldType.IsValueType)
+          if (!field.Info.FieldType.IsValueType)
           {
             il.Emit(OpCodes.Ldarg_1);                 // Load object
-            il.Emit(OpCodes.Ldfld, field);            // Read field form object
+            il.Emit(OpCodes.Ldfld, field.Info);       // Read field form object
             il.Emit(OpCodes.Brfalse, skipFieldLabel); // Skip if field is null
           }
 
           // Write field id
           il.Emit(OpCodes.Ldarg_0);                   // Load stream
-          il.Emit(OpCodes.Ldstr, fieldAttribute.Id);  // Load field id
-          il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(string)));
+          il.Emit(OpCodes.Ldstr, field.Attribute.Id); // Load field id
+          il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
           var serialize = typeof(BinSerializer<>)
-            .MakeGenericType(field.FieldType)
+            .MakeGenericType(field.Info.FieldType)
             .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
           // Write field
           il.Emit(OpCodes.Ldarg_0);           // Load stream
           il.Emit(OpCodes.Ldarg_1);           // Load object
-          il.Emit(OpCodes.Ldfld, field);      // Read field from object
+          il.Emit(OpCodes.Ldfld, field.Info); // Read field from object
           il.Emit(OpCodes.Call, serialize);   // Write field value
 
           // Skip field label
@@ -262,7 +251,7 @@ namespace ThirtyNineEighty.BinarySerializer
         // Write end id
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldstr, SerializerTypes.TypeEndToken);
-        il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(string))); 
+        il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string))); 
       }
 
       // Skip type label
@@ -297,14 +286,14 @@ namespace ThirtyNineEighty.BinarySerializer
       // Write type
       il.Emit(OpCodes.Ldarg_0);
       il.Emit(OpCodes.Ldstr, SerializerTypes.GetTypeId(type));
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(string)));
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
       // Write refId
       il.Emit(OpCodes.Ldarg_0);           // Load stream
       il.Emit(OpCodes.Ldarg_1);           // Load obj
       il.Emit(OpCodes.Ldloca_S, (byte)2); // Load address of bool local
       il.Emit(OpCodes.Call, getRefId);    // Obj => RefId
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(int)));
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(int)));
 
       // Check case when reference type already serialized.
       // If null be returned then created flag be zero too and serialization will be skipped.
@@ -330,7 +319,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Ldarg_0);         // Load stream
         il.Emit(OpCodes.Ldarg_1);         // Load array
         il.Emit(OpCodes.Ldlen);           // Load array length
-        il.Emit(OpCodes.Call, SerializerTypes.TryGetWriter(typeof(int)));
+        il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(int)));
 
         // Set array length
         il.Emit(OpCodes.Ldarg_1); // Load array
@@ -392,18 +381,8 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Delegate CreateReaderMethod(Type type)
     {
-      DynamicMethod dynamicMethod = null;
-
       var methodName = string.Format("{0}_reader", type);
-      if (type.IsValueType)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
-      if (!type.IsValueType && !type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
-      if (type.IsArray)
-        dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
-
-      if (dynamicMethod == null)
-        throw new NotImplementedException(string.Format("DynamicMethod not builded for type: {0}", type));
+      var dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -423,15 +402,15 @@ namespace ThirtyNineEighty.BinarySerializer
       var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
       var defaultCtor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
       var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
-      var dynamicObjectRead = typeof(SerializerBuilder).GetMethod("DynamicObjectRead", BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod(type);
+      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type).GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
       var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
 
-      il.DeclareLocal(typeof(int));
-      il.DeclareLocal(type);
-      il.DeclareLocal(typeof(string));
+      il.DeclareLocal(typeof(int));    // ref if
+      il.DeclareLocal(type);           // readed object
+      il.DeclareLocal(typeof(string)); // last readed field id
+      il.DeclareLocal(typeof(int));    // readed object version
 
       var resultLabel = il.DefineLabel();
-      var readVersionLabel = il.DefineLabel();
       var readFastLabel = il.DefineLabel();
 
       // Process reference id
@@ -440,10 +419,10 @@ namespace ThirtyNineEighty.BinarySerializer
         var tryLoadReferenceLabel = il.DefineLabel();
 
         // Read reference id
-        il.Emit(OpCodes.Ldarg_0);                                         // Load stream
-        il.Emit(OpCodes.Call, SerializerTypes.TryGetReader(typeof(int))); // Read ref id
-        il.Emit(OpCodes.Dup);                                             // Duplicate ref id
-        il.Emit(OpCodes.Stloc_0);                                         // Set ref id to local
+        il.Emit(OpCodes.Ldarg_0);                                               // Load stream
+        il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamReader(typeof(int))); // Read ref id
+        il.Emit(OpCodes.Dup);                                                   // Duplicate ref id
+        il.Emit(OpCodes.Stloc_0);                                               // Set ref id to local
 
         // Check if result null
         il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel); // Check if null was written
@@ -461,26 +440,12 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
       }
 
-      il.MarkLabel(readVersionLabel);
+      // Read version
+      il.Emit(OpCodes.Ldarg_0);                                               // Load stream
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamReader(typeof(int))); // Read saved version
+      il.Emit(OpCodes.Stloc_3);                                               // Save version to local
 
-      // Read code type version
-      var version = SerializerTypes.GetVersion(type);
-
-      // Compare versions
-      il.Emit(OpCodes.Ldc_I4, version);                                 // Load program type version 
-      il.Emit(OpCodes.Ldarg_0);                                         // Load stream
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetReader(typeof(int))); // Read saved version
-      il.Emit(OpCodes.Beq, readFastLabel);
-
-      // Call dynamic read if versions not equal
-      il.Emit(OpCodes.Ldarg_0);                 // Load stream
-      il.Emit(OpCodes.Call, dynamicObjectRead); // Do dynamic read
-      il.Emit(OpCodes.Stloc_1);                 // Set readed value to result local
-      il.Emit(OpCodes.Br, resultLabel);         // Jump to return code part
-
-      il.MarkLabel(readFastLabel);
-
-      var reader = SerializerTypes.TryGetReader(type);
+      var reader = SerializerTypes.TryGetStreamReader(type);
       if (reader != null)
       {
         // Read
@@ -529,61 +494,90 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, addRef);
         }
 
-        // Read fields
-        Label? nextFieldLabel = null;
+        // Read code type version
+        var version = SerializerTypes.GetVersion(type);
 
-        foreach (var field in GetFields(type))
+        il.Emit(OpCodes.Ldloc_3);             // Load version
+        il.Emit(OpCodes.Ldc_I4, version);     // Load program type version 
+        il.Emit(OpCodes.Beq, readFastLabel);
+
+        // Call dynamic read if versions not equal
+        il.Emit(OpCodes.Ldarg_0);                 // Load stream
+        il.Emit(OpCodes.Ldloc_1);                 // Load obj instance
+        il.Emit(OpCodes.Ldloc_3);                 // Load version
+        il.Emit(OpCodes.Call, dynamicObjectRead); // Do dynamic read
+        il.Emit(OpCodes.Stloc_1);                 // Set readed value to result local
+        il.Emit(OpCodes.Br, resultLabel);         // Jump to return code part
+
+        il.MarkLabel(readFastLabel);
+
+        // Read
+        var typeReader = SerializerTypes.TryGetTypeReader(type);
+        if (typeReader != null)
         {
-          var fieldAttribute = field.GetCustomAttribute<BinFieldAttribute>(false);
+          // Read type
+          il.Emit(OpCodes.Ldarg_0); // Load stream
+          il.Emit(OpCodes.Ldloc_1); // Load obj instance
+          il.Emit(OpCodes.Ldloc_3); // Load version
+          il.Emit(OpCodes.Call, typeReader);
+          il.Emit(OpCodes.Stloc_1); // Set result to local
+        }
+        else
+        {
+          // Read fields
+          Label? nextFieldLabel = null;
 
-          var markCurrent = nextFieldLabel != null;
-          if (nextFieldLabel == null)
-            nextFieldLabel = il.DefineLabel();
-
-          // Read field id
-          il.Emit(OpCodes.Ldarg_0);                                            // Load stream
-          il.Emit(OpCodes.Call, SerializerTypes.TryGetReader(typeof(string))); // Read field id
-          il.Emit(OpCodes.Stloc_2);                                            // Save last readed field id
-
-          // Mark next field label only after field read
-          if (markCurrent)
+          foreach (var field in GetFields(type))
           {
-            il.MarkLabel(nextFieldLabel.Value);
-            nextFieldLabel = il.DefineLabel();
+            var markCurrent = nextFieldLabel != null;
+            if (nextFieldLabel == null)
+              nextFieldLabel = il.DefineLabel();
+
+            // Read field id
+            il.Emit(OpCodes.Ldarg_0);                                                  // Load stream
+            il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamReader(typeof(string))); // Read field id
+            il.Emit(OpCodes.Stloc_2);                                                  // Save last readed field id
+
+            // Mark next field label only after field read
+            if (markCurrent)
+            {
+              il.MarkLabel(nextFieldLabel.Value);
+              nextFieldLabel = il.DefineLabel();
+            }
+
+            // Compare field ids, if it not equals then skip read
+            il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
+            il.Emit(OpCodes.Ldstr, field.Attribute.Id);             // Load field id 
+            il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
+            il.Emit(OpCodes.Call, stringEquals);                    // Compare
+            il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);         // These aren't the field your looking for
+
+            var deserialize = typeof(BinSerializer<>)
+              .MakeGenericType(field.Info.FieldType)
+              .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
+
+            // Prepeare stack to field set
+            if (type.IsValueType)
+              il.Emit(OpCodes.Ldloca_S, (byte)1);
+            else
+              il.Emit(OpCodes.Ldloc_1);
+
+            // Read field
+            il.Emit(OpCodes.Ldarg_0); // Load stream
+            il.Emit(OpCodes.Call, deserialize);
+
+            // Set field
+            il.Emit(OpCodes.Stfld, field.Info);
           }
 
-          // Compare field ids, if it not equals then skip read
-          il.Emit(OpCodes.Ldloc_2);                                        // Load readed field id
-          il.Emit(OpCodes.Ldstr, fieldAttribute.Id);                       // Load field id 
-          il.Emit(OpCodes.Ldc_I4, (int)StringComparison.InvariantCulture); // Load comparsion type
-          il.Emit(OpCodes.Call, stringEquals);                             // Compare
-          il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);                  // These aren't the field your looking for
+          // Mark jump (for last field)
+          if (nextFieldLabel != null)
+            il.MarkLabel(nextFieldLabel.Value);
 
-          var deserialize = typeof(BinSerializer<>)
-            .MakeGenericType(field.FieldType)
-            .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
-
-          // Prepeare stack to field set
-          if (type.IsValueType)
-            il.Emit(OpCodes.Ldloca_S, (byte)1);
-          else
-            il.Emit(OpCodes.Ldloc_1);
-
-          // Read field
-          il.Emit(OpCodes.Ldarg_0); // Load stream
-          il.Emit(OpCodes.Call, deserialize);
-          
-          // Set field
-          il.Emit(OpCodes.Stfld, field);
+          // Skip end
+          il.Emit(OpCodes.Ldarg_0);
+          il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamSkiper(typeof(string)));
         }
-
-        // Mark jump (for last field)
-        if (nextFieldLabel != null)
-          il.MarkLabel(nextFieldLabel.Value);
-
-        // Skip end
-        il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Call, SerializerTypes.TryGetSkiper(typeof(string)));
       }
 
       // Return result
@@ -616,10 +610,10 @@ namespace ThirtyNineEighty.BinarySerializer
       var tryLoadReferenceLabel = il.DefineLabel();
 
       // Read reference id
-      il.Emit(OpCodes.Ldarg_0);                                         // Load stream
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetReader(typeof(int))); // Read ref id
-      il.Emit(OpCodes.Dup);                                             // Duplicate ref id
-      il.Emit(OpCodes.Stloc_0);                                         // Set ref id to local
+      il.Emit(OpCodes.Ldarg_0);                                               // Load stream
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamReader(typeof(int))); // Read ref id
+      il.Emit(OpCodes.Dup);                                                   // Duplicate ref id
+      il.Emit(OpCodes.Stloc_0);                                               // Set ref id to local
 
       // Check if result null
       il.Emit(OpCodes.Brtrue, tryLoadReferenceLabel); // Check if null was written
@@ -637,9 +631,9 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Brtrue, resultLabel); // Jump to result if reference already exist
 
       // Read array length
-      il.Emit(OpCodes.Ldarg_0);                                         // Load stream
-      il.Emit(OpCodes.Call, SerializerTypes.TryGetReader(typeof(int))); // Read length
-      il.Emit(OpCodes.Stloc_1);                                         // Set array length
+      il.Emit(OpCodes.Ldarg_0);                                               // Load stream
+      il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamReader(typeof(int))); // Read length
+      il.Emit(OpCodes.Stloc_1);                                               // Set array length
 
       // Set current index
       il.Emit(OpCodes.Ldc_I4_0); // Load zero
@@ -690,21 +684,69 @@ namespace ThirtyNineEighty.BinarySerializer
 
     // Used when saved version not equal to version in runned program.
     // It's slower than generated.
-    [SecurityCritical]
-    private static T DynamicObjectRead<T>(Stream stream)
+    private static class DynamicObjectReader<T>
     {
-      throw new NotImplementedException();
+      private static readonly Type Type = typeof(T);
+      private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(typeof(T));
+
+      [SecurityCritical]
+      static DynamicObjectReader()
+      {
+      }
+
+      // Called by Emit.
+      [SecurityCritical]
+      public static T Read(Stream stream, T instance, int version)
+      {
+        var minSupportedVersion = SerializerTypes.GetMinSupported(Type);
+        if (version < minSupportedVersion)
+          throw new InvalidDataException(string.Format("Received version less than minimum supported ({0} < {1})", version, minSupportedVersion));
+
+        var boxedInstance = (object)instance;
+        while (true)
+        {
+          var token = stream.ReadString();
+          if (token == SerializerTypes.TypeEndToken)
+            break;
+
+          FieldInfo field;
+          if (!FieldsMap.TryGetValue(token, out field))
+            continue;
+
+          field.SetValue(boxedInstance, BinSerializer<object>.Deserialize(stream));
+        }
+
+        return (T)boxedInstance;
+      }
+
+      [SecurityCritical]
+      private static Dictionary<string, FieldInfo> GetFieldsMap(Type type)
+      {
+        return GetFields(type).ToDictionary(f => f.Attribute.Id, f => f.Info);
+      }
     }
     #endregion
 
     #region get fields
+    private struct Field
+    {
+      public readonly BinFieldAttribute Attribute;
+      public readonly FieldInfo Info;
+
+      public Field(BinFieldAttribute attribute, FieldInfo fieldInfo)
+      {
+        Attribute = attribute;
+        Info = fieldInfo;
+      }
+    }
+
     [SecurityCritical]
-    private static IEnumerable<FieldInfo> GetFields(Type type)
+    private static IEnumerable<Field> GetFields(Type type)
     {
       var fields = type
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-        .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<BinFieldAttribute>(false) })
-        .Where(i => i.Attribute != null);
+        .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
+        .Where(f => f.Attribute != null);
 
       Type currentType = type;
       while (true)
@@ -716,20 +758,20 @@ namespace ThirtyNineEighty.BinarySerializer
         var baseTypePrivateFields = currentType
           .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
           .Where(f => !f.IsFamily)
-          .Select(f => new { Field = f, Attribute = f.GetCustomAttribute<BinFieldAttribute>(false) })
-          .Where(i => i.Attribute != null);
+          .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
+          .Where(f => f.Attribute != null);
 
         fields = fields.Concat(baseTypePrivateFields);
-      } 
+      }
 
       var declaredIds = new HashSet<string>();
-      foreach (var pair in fields.OrderBy(p => p.Attribute.Id))
+      foreach (var field in fields.OrderBy(p => p.Attribute.Id))
       {
-        if (!declaredIds.Add(pair.Attribute.Id))
-          throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", pair.Attribute.Id, pair.Field.DeclaringType));
-        if (pair.Field.IsInitOnly)
-          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {1}", pair.Field.Name, pair.Field.DeclaringType));
-        yield return pair.Field;
+        if (!declaredIds.Add(field.Attribute.Id))
+          throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", field.Attribute.Id, field.Info.DeclaringType));
+        if (field.Info.IsInitOnly)
+          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {1}", field.Info.Name, field.Info.DeclaringType));
+        yield return field;
       }
     }
     #endregion

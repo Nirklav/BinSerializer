@@ -62,7 +62,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static void WriteImpl(string text)
     {
       //const string traceFile = @"D:\trace.txt";
-      //File.AppendAllText(traceFile, text);
+      //System.IO.File.AppendAllText(traceFile, text);
     }
   }
 }
