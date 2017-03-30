@@ -104,9 +104,9 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         }
       }
 
-      var description = new BinTypeDescription(type, name ?? type.Name);
+      var description = new BinTypeDescription(type, name);
       var version = new BinTypeVersion(0, 0);
-      var process = BinTypeProcess.CreateTypeProcess(writer, reader);
+      var process = BinTypeProcess.Create(writer, reader);
 
       AddTypeImpl(description, version, process);
     }
@@ -124,19 +124,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static void AddUserDefinedTypes()
     {
       foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-      {
-        foreach (var type in assembly.DefinedTypes)
-        {
-          var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
-          if (attribute != null)
-          {
-            var description = new BinTypeDescription(type, attribute.Id);
-            var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
-
-            AddTypeImpl(description, version, null);
-          }
-        }
-      }
+        AddTypesFrom(assembly);
     }
 
     [SecurityCritical]
@@ -179,6 +167,30 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         AddTypeImpl(description, version, process);
+      }
+      finally
+      {
+        Locker.ExitWriteLock();
+      }
+    }
+
+    [SecuritySafeCritical]
+    public static void AddTypesFrom(Assembly assembly)
+    {
+      Locker.EnterWriteLock();
+      try
+      {
+        foreach (var type in assembly.DefinedTypes)
+        {
+          var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
+          if (attribute != null)
+          {
+            var description = new BinTypeDescription(type, attribute.Id);
+            var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
+
+            AddTypeImpl(description, version, null);
+          }
+        }
       }
       finally
       {

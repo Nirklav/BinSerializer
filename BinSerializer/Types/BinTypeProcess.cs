@@ -21,14 +21,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return new BinTypeProcess(null, null, null, writer.Method, reader.Method);
     }
 
+    public static BinTypeProcess Create(MethodInfo writer, MethodInfo reader)
+    {
+      return new BinTypeProcess(null, null, null, writer, reader);
+    }
+
     internal static BinTypeProcess CreateStreamProcess(MethodInfo streamWriter, MethodInfo streamReader, MethodInfo streamSkiper)
     {
       return new BinTypeProcess(streamWriter, streamReader, streamSkiper, null, null);
-    }
-
-    internal static BinTypeProcess CreateTypeProcess(MethodInfo typeWriter, MethodInfo typeReader)
-    {
-      return new BinTypeProcess(null, null, null, typeWriter, typeReader);
     }
 
     private BinTypeProcess(MethodInfo streamWriter, MethodInfo streamReader, MethodInfo streamSkiper, MethodInfo typeWriter, MethodInfo typeReader)

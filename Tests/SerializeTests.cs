@@ -1,8 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Reflection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
 using System.Security;
 using ThirtyNineEighty.BinarySerializer;
+using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace Tests
 {
@@ -396,14 +398,6 @@ namespace Tests
       Assert.AreEqual(input.Six, output.Six);
     }
 
-    private static T SerializeDeserialize<T>(T input)
-    {
-      var stream = new MemoryStream();
-      BinSerializer.Serialize(stream, input);
-      stream.Position = 0;
-      return BinSerializer.Deserialize<T>(stream);
-    }
-
     [BinType("EqualsTestType")]
     public class EqualsTestType
     {
@@ -519,6 +513,95 @@ namespace Tests
       Assert.AreEqual(l2, tl2);
       Assert.AreEqual(l3, tl3);
       Assert.AreEqual(l4, tl4);
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void TestManual()
+    {
+      SerializerTypes.AddType(
+        new BinTypeDescription(typeof(Manual), "Manual")
+        , new BinTypeVersion(10, 0)
+        , BinTypeProcess.Create<Manual>(Manual.Write, Manual.Read)
+      );
+
+      var input = new Manual();
+      input.FieldOne = "asd";
+      input.FieldTwo = "lsd";
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.FieldOne, output.FieldOne);
+      Assert.AreEqual(input.FieldTwo, output.FieldTwo);
+    }
+
+    public class Manual
+    {
+      public string FieldOne;
+      public string FieldTwo;
+
+      public static void Write(Stream stream, Manual instance)
+      {
+        stream.Write(instance.FieldOne);
+        stream.Write(instance.FieldTwo);
+      }
+
+      public static Manual Read(Stream stream, Manual instance, int version)
+      {
+        instance.FieldOne = stream.ReadString();
+        instance.FieldTwo = stream.ReadString();
+        return instance;
+      }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void TestManualGeneric()
+    {
+      var write = typeof(SerializeTests).GetMethod("WriteManualGeneric", BindingFlags.Static | BindingFlags.Public);
+      var read = typeof(SerializeTests).GetMethod("ReadManualGeneric", BindingFlags.Static | BindingFlags.Public);
+
+      SerializerTypes.AddType(
+        new BinTypeDescription(typeof(ManualGenericType<,>), "ManualGenericType")
+        , new BinTypeVersion(10, 0)
+        , BinTypeProcess.Create(write, read)
+      );
+
+      var input = new ManualGenericType<string, string>();
+      input.FieldOne = "asd";
+      input.FieldTwo = "lsd";
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.FieldOne, output.FieldOne);
+      Assert.AreEqual(input.FieldTwo, output.FieldTwo);
+    }
+
+    public class ManualGenericType<T1, T2>
+    {
+      public T1 FieldOne;
+      public T2 FieldTwo;
+    }
+
+    public static void WriteManualGeneric<T1, T2>(Stream stream, ManualGenericType<T1, T2> instance)
+    {
+      BinSerializer.Serialize(stream, instance.FieldOne);
+      BinSerializer.Serialize(stream, instance.FieldTwo);
+    }
+
+    public static ManualGenericType<T1, T2> ReadManualGeneric<T1, T2>(Stream stream, ManualGenericType<T1, T2> instance, int version)
+    {
+      instance.FieldOne = BinSerializer.Deserialize<T1>(stream);
+      instance.FieldTwo = BinSerializer.Deserialize<T2>(stream);
+      return instance;
+    }
+
+    private static T SerializeDeserialize<T>(T input)
+    {
+      var stream = new MemoryStream();
+      BinSerializer.Serialize(stream, input);
+      stream.Position = 0;
+      return BinSerializer.Deserialize<T>(stream);
     }
   }
 }
