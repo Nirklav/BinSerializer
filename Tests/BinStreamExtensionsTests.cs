@@ -90,7 +90,7 @@ namespace Tests
       stream.Position = 0;
       var output = (T)reader.Invoke(null, new object[] { stream });
 
-      Assert.AreEqual(input, output, string.Format("Error for {0} type. Writed {1}, Readed {2}", type.Name, input, output));
+      Assert.AreEqual(input, output, string.Format("Error for {0} type. Written {1}, Readed {2}", type.Name, input, output));
     }
 
     private void TestWriteSkip<T>(T input)
