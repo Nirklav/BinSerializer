@@ -104,7 +104,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
   }
 
-  internal class WriterMethodAdapter<TFrom, TTo>
+  internal sealed class WriterMethodAdapter<TFrom, TTo>
   {
     private readonly Writer<TFrom> _writer;
 
@@ -121,7 +121,7 @@ namespace ThirtyNineEighty.BinarySerializer
     }
   }
 
-  internal class ReaderMethodAdapter<TFrom, TTo>
+  internal sealed class ReaderMethodAdapter<TFrom, TTo>
   {
     private readonly Reader<TFrom> _reader;
 

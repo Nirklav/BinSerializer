@@ -6,7 +6,7 @@ using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  enum StreamExtensionKind
+  public enum StreamExtensionKind
   {
     Write,
     Read,
@@ -14,7 +14,7 @@ namespace ThirtyNineEighty.BinarySerializer
   }
 
   [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-  class BinStreamExtensionAttribute : Attribute
+  public class BinStreamExtensionAttribute : Attribute
   {
     public Type Type { get; private set; }
     public StreamExtensionKind Kind { get; private set; }
@@ -28,8 +28,6 @@ namespace ThirtyNineEighty.BinarySerializer
 
   public static class BinStreamExtensions
   {
-    private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
     #region writers
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(bool), StreamExtensionKind.Write)]
@@ -243,7 +241,12 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteDecimal", stream.Position);
 
-      stream.Write(ToLong(obj));
+      unsafe
+      {
+        var p = (long*)&obj;
+        stream.Write(p[0]);
+        stream.Write(p[1]);
+      }
 
       BSDebug.TraceEnd("WriteDecimal", stream.Position);
     }
@@ -303,8 +306,7 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteDateTime", stream.Position);
 
-      var seconds = obj - UnixEpochStart;
-      stream.Write((long)seconds.TotalSeconds);
+      stream.Write(obj.Ticks);
 
       BSDebug.TraceEnd("WriteDateTime", stream.Position);
     }
@@ -510,7 +512,13 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("ReadDecimal", stream.Position);
 
-      var result = ToDecimal(stream.ReadInt64());
+      decimal result;
+      unsafe
+      {
+        var p = (long*)&result;
+        p[0] = stream.ReadInt64();
+        p[1] = stream.ReadInt64();
+      }
 
       BSDebug.TraceEnd("ReadDecimal", stream.Position);
       return result;
@@ -547,10 +555,10 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("ReadDateTime", stream.Position);
 
-      var unixTime = stream.ReadInt64();
+      var ticks = stream.ReadInt64();
 
       BSDebug.TraceEnd("ReadDateTime", stream.Position);
-      return UnixEpochStart.AddSeconds(unixTime);
+      return new DateTime(ticks);
     }
     #endregion
 
@@ -706,7 +714,7 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("SkipDecimal", stream.Position);
 
-      stream.Position += sizeof(byte);
+      stream.Position += sizeof(long) * 2;
 
       BSDebug.TraceEnd("SkipDecimal", stream.Position);
     }
@@ -754,13 +762,6 @@ namespace ThirtyNineEighty.BinarySerializer
 
     [SecuritySafeCritical]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe long ToLong(decimal f)
-    {
-      return *(long*)(&f);
-    }
-
-    [SecuritySafeCritical]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe float ToSingle(int i)
     {
       return *(float*)(&i);
@@ -771,13 +772,6 @@ namespace ThirtyNineEighty.BinarySerializer
     private static unsafe double ToDouble(long i)
     {
       return *(double*)(&i);
-    }
-
-    [SecuritySafeCritical]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe decimal ToDecimal(long i)
-    {
-      return *(decimal*)(&i);
     }
     #endregion
   }
