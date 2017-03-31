@@ -24,7 +24,7 @@ namespace ThirtyNineEighty.BinarySerializer
     public static Writer<T> CreateWriter<T>(Type type)
     {
       var method = Writers.GetOrAdd(type, CreateWriterMethod);
-      return MethodAdpater.CastWriter<T>(method, type);
+      return MethodAdapter.CastWriter<T>(method, type);
     }
 
     [SecuritySafeCritical]
@@ -249,7 +249,7 @@ namespace ThirtyNineEighty.BinarySerializer
     public static Reader<T> CreateReader<T>(Type type)
     {
       var method = Readers.GetOrAdd(type, CreateReaderMethod);
-      return MethodAdpater.CastReader<T>(method, type);
+      return MethodAdapter.CastReader<T>(method, type);
     }
 
     [SecurityCritical]

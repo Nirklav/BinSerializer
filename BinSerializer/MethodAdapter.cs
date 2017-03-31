@@ -5,7 +5,7 @@ using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  internal static class MethodAdpater
+  internal static class MethodAdapter
   {
     private struct TypePair : IEquatable<TypePair>
     {
