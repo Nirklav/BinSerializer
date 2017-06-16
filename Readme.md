@@ -7,6 +7,10 @@
 - Two times faster than BinaryFormatter.
 - Supports manual serialization and deserialzation.
 
+### Install:
+You can install library from nuget:
+https://www.nuget.org/packages/ThirtyNineEighty.BinarySerializer
+
 ### Usage:
 ``` C#
     BinSerializer.Serialize<SomeType>(stream, input);
