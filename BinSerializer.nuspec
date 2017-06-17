@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>ThirtyNineEighty.BinarySerializer</id>
+    <version>2.0.0</version>
+    <authors>Nirklav</authors>
+    <licenseUrl>https://github.com/Nirklav/BinSerializer/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/Nirklav/BinSerializer</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Binary serializer</description>
+    <tags>Serializer BinarySerializer</tags>
+    <packageTypes>
+        <packageType name="Dependency" />
+    </packageTypes>
+  </metadata>
+  <files>
+    <file src="lib\**\*.*" target="lib" />
+  </files>
+</package>

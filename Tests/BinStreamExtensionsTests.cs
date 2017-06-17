@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ThirtyNineEighty.BinarySerializer;
+using System.Security;
 
 namespace Tests
 {
@@ -15,6 +16,7 @@ namespace Tests
     private readonly Dictionary<Type, MethodInfo> _skipers = new Dictionary<Type, MethodInfo>();
 
     [TestInitialize]
+    [SecurityCritical]
     public void Init()
     {
       foreach (var method in typeof(BinStreamExtensions).GetMethods())
@@ -39,6 +41,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void TestWriteRead()
     {
       TestWriteRead(true);
@@ -59,6 +62,7 @@ namespace Tests
     }
 
     [TestMethod]
+    [SecurityCritical]
     public void TestWriteSkip()
     {
       TestWriteSkip(true);
@@ -78,6 +82,7 @@ namespace Tests
       TestWriteSkip(DateTime.UtcNow);
     }
 
+    [SecurityCritical]
     private void TestWriteRead<T>(T input)
     {
       var type = typeof(T);
@@ -93,6 +98,7 @@ namespace Tests
       Assert.AreEqual(input, output, string.Format("Error for {0} type. Written {1}, Readed {2}", type.Name, input, output));
     }
 
+    [SecurityCritical]
     private void TestWriteSkip<T>(T input)
     {
       var type = typeof(T);
