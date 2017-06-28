@@ -18,14 +18,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     // Types map
     private static readonly ReaderWriterLockSlim Locker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
     private static readonly Dictionary<string, SerializerTypeInfo> TypesById = new Dictionary<string, SerializerTypeInfo>();
-    private static readonly Dictionary<Type, SerializerTypeInfo> TypesByType = new Dictionary<Type, SerializerTypeInfo>();
+    private static readonly Dictionary<TypeInfo, SerializerTypeInfo> TypesByType = new Dictionary<TypeInfo, SerializerTypeInfo>();
 
     // Runtime cache
-    private static readonly ConcurrentDictionary<string, Type> TypeIdToTypeCache = new ConcurrentDictionary<string, Type>();
-    private static readonly ConcurrentDictionary<Type, string> TypeToTypeIdCache = new ConcurrentDictionary<Type, string>();
+    private static readonly ConcurrentDictionary<string, TypeInfo> TypeIdToTypeCache = new ConcurrentDictionary<string, TypeInfo>();
+    private static readonly ConcurrentDictionary<TypeInfo, string> TypeToTypeIdCache = new ConcurrentDictionary<TypeInfo, string>();
 
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
+    private static readonly ConcurrentDictionary<TypeInfo, MethodInfo> TypeToTypeWritersCache = new ConcurrentDictionary<TypeInfo, MethodInfo>();
+    private static readonly ConcurrentDictionary<TypeInfo, MethodInfo> TypeToTypeReadersCache = new ConcurrentDictionary<TypeInfo, MethodInfo>();
  
     #region initialization
     [SecuritySafeCritical]
@@ -57,12 +57,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     private static void AddStreamType<T>()
     {
-      var type = typeof(T);
+      var type = typeof(T).GetTypeInfo();
       MethodInfo reader = null;
       MethodInfo writer = null;
       MethodInfo skiper = null;
 
-      foreach (var method in typeof(BinStreamExtensions).GetMethods())
+      foreach (var method in typeof(BinStreamExtensions).GetTypeInfo().GetMethods())
       {
         var attrib = method.GetCustomAttribute<BinStreamExtensionAttribute>(false);
         if (attrib == null || attrib.Type != type)
@@ -90,7 +90,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       MethodInfo reader = null;
       MethodInfo writer = null;
 
-      foreach (var method in typeof(BinTypeExtensions).GetMethods())
+      foreach (var method in typeof(BinTypeExtensions).GetTypeInfo().GetMethods())
       {
         var attrib = method.GetCustomAttribute<BinTypeExtensionAttribute>(false);
         if (attrib == null || attrib.Type != type)
@@ -143,7 +143,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Process is not valid");
 
       SerializerTypeInfo typeInfo;
-      if (description.Type == typeof(Array))
+      if (description.Type == typeof(Array).GetTypeInfo())
         typeInfo = new ArraySerializerTypeInfo(description, version, process);
       else if (description.Type.IsGenericType)
         typeInfo = new GenericSerializerTypeInfo(description, version, process);
@@ -203,6 +203,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static string GetTypeId(Type type)
     {
+      return GetTypeId(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static string GetTypeId(TypeInfo type)
+    {
       Locker.EnterReadLock();
       try
       {
@@ -217,6 +223,13 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     // Must be called under read lock
     [SecurityCritical]
     internal static string GetTypeIdImpl(Type type)
+    {
+      return GetTypeIdImpl(type.GetTypeInfo());
+    }
+
+    // Must be called under read lock
+    [SecurityCritical]
+    internal static string GetTypeIdImpl(TypeInfo type)
     {
       // Try return from cache
       string cachedTypeId;
@@ -256,9 +269,9 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     internal static Type GetTypeImpl(string typeId)
     {
       // Try return from cache
-      Type cachedType;
+      TypeInfo cachedType;
       if (TypeIdToTypeCache.TryGetValue(typeId, out cachedType))
-        return cachedType;
+        return cachedType.AsType();
 
       // Resolve type
       var info = GetTypeInfo(typeId);
@@ -269,13 +282,19 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       TypeIdToTypeCache.TryAdd(typeId, type);
 
       // Result
-      return type;
+      return type.AsType();
     }
     #endregion
 
     #region get versions
     [SecurityCritical]
     internal static int GetVersion(Type type)
+    {
+      return GetVersion(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static int GetVersion(TypeInfo type)
     {
       Locker.EnterReadLock();
       try
@@ -291,6 +310,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     [SecurityCritical]
     internal static int GetMinSupported(Type type)
+    {
+      return GetMinSupported(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static int GetMinSupported(TypeInfo type)
     {
       Locker.EnterReadLock();
       try
@@ -309,6 +334,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static MethodInfo TryGetStreamWriter(Type type)
     {
+      return TryGetStreamWriter(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetStreamWriter(TypeInfo type)
+    {
       Locker.EnterReadLock();
       try
       {
@@ -324,6 +355,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     internal static MethodInfo TryGetStreamReader(Type type)
     {
+      return TryGetStreamReader(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetStreamReader(TypeInfo type)
+    {
       Locker.EnterReadLock();
       try
       {
@@ -338,6 +375,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     [SecurityCritical]
     internal static MethodInfo TryGetStreamSkiper(Type type)
+    {
+      return TryGetStreamSkiper(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetStreamSkiper(TypeInfo type)
     {
       Locker.EnterReadLock();
       try
@@ -355,6 +398,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     #region get typeWriter/typeReader
     [SecurityCritical]
     internal static MethodInfo TryGetTypeWriter(Type type)
+    {
+      return TryGetTypeWriter(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetTypeWriter(TypeInfo type)
     {
       Locker.EnterReadLock();
       try
@@ -382,6 +431,12 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     [SecurityCritical]
     internal static MethodInfo TryGetTypeReader(Type type)
+    {
+      return TryGetTypeReader(type.GetTypeInfo());
+    }
+
+    [SecurityCritical]
+    internal static MethodInfo TryGetTypeReader(TypeInfo type)
     {
       Locker.EnterReadLock();
       try
@@ -411,7 +466,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     #region type info helpers
     // Must be called read under lock
     [SecurityCritical]
-    private static SerializerTypeInfo GetTypeInfo(Type type)
+    private static SerializerTypeInfo GetTypeInfo(TypeInfo type)
     {
       var normalizedType = Normalize(type);
       SerializerTypeInfo info;
@@ -434,18 +489,18 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     #region normalize type/typeid helpers
     [SecurityCritical]
-    private static Type Normalize(Type type)
+    private static TypeInfo Normalize(TypeInfo typeInfo)
     {
-      if (type.IsEnum)
-        return Enum.GetUnderlyingType(type);
+      if (typeInfo.IsEnum)
+        return Enum.GetUnderlyingType(typeInfo.AsType()).GetTypeInfo();
 
-      if (type.IsArray)
-        return typeof(Array);
+      if (typeInfo.IsArray)
+        return typeof(Array).GetTypeInfo();
 
-      if (type.IsGenericType && !type.IsGenericTypeDefinition)
-        return type.GetGenericTypeDefinition();
+      if (typeInfo.IsGenericType && !typeInfo.IsGenericTypeDefinition)
+        return typeInfo.GetGenericTypeDefinition().GetTypeInfo();
 
-      return type;
+      return typeInfo;
     }
 
     [SecurityCritical]

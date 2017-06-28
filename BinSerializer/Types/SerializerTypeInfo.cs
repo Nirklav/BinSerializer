@@ -29,7 +29,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentNullException("version");
 
       // Set
-      Type = description.Type.GetTypeInfo();
+      Type = description.Type;
       TypeId = description.TypeId;
 
       Version = version.Version;
@@ -46,26 +46,26 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
     }
 
-    public virtual MethodInfo GetTypeWriter(Type notNormalizedType)
+    public virtual MethodInfo GetTypeWriter(TypeInfo notNormalizedType)
     {
       return _typeWriter;
     }
 
-    public virtual MethodInfo GetTypeReader(Type notNormalizedType)
+    public virtual MethodInfo GetTypeReader(TypeInfo notNormalizedType)
     {
       return _typeReader;
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public virtual Type GetType(string notNormalizedTypeId)
+    public virtual TypeInfo GetType(string notNormalizedTypeId)
     {
       return Type;
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public virtual string GetTypeId(Type notNormalizedType)
+    public virtual string GetTypeId(TypeInfo notNormalizedType)
     {
       return TypeId;
     }

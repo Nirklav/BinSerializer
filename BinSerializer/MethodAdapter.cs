@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Reflection;
 using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
@@ -9,10 +10,10 @@ namespace ThirtyNineEighty.BinarySerializer
   {
     private struct TypePair : IEquatable<TypePair>
     {
-      private readonly Type _from;
-      private readonly Type _to;
+      private readonly TypeInfo _from;
+      private readonly TypeInfo _to;
 
-      public TypePair(Type from, Type to)
+      public TypePair(TypeInfo from, TypeInfo to)
       {
         _from = from;
         _to = to;
@@ -42,10 +43,10 @@ namespace ThirtyNineEighty.BinarySerializer
     private static readonly ConcurrentDictionary<TypePair, Delegate> CachedReaders = new ConcurrentDictionary<TypePair, Delegate>(); 
 
     [SecurityCritical]
-    public static Writer<TTo> CastWriter<TTo>(Delegate writer, Type from)
+    public static Writer<TTo> CastWriter<TTo>(Delegate writer, TypeInfo from)
     {
       // Check if equals
-      var to = typeof(TTo);
+      var to = typeof(TTo).GetTypeInfo();
       if (to == from)
         return (Writer<TTo>)writer;
 
@@ -60,8 +61,8 @@ namespace ThirtyNineEighty.BinarySerializer
         return (Writer<TTo>)castedWriter;
 
       // Create
-      var closedAdapter = typeof(WriterMethodAdapter<,>).MakeGenericType(from, to);
-      var write = closedAdapter.GetMethod("Write");
+      var closedAdapter = typeof(WriterMethodAdapter<,>).MakeGenericType(from.AsType(), to.AsType());
+      var write = closedAdapter.GetTypeInfo().GetMethod("Write");
       var adapter = Activator.CreateInstance(closedAdapter, writer);
       castedWriter = write.CreateDelegate(typeof(Writer<TTo>), adapter);
 
@@ -73,10 +74,10 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecurityCritical]
-    public static Reader<TTo> CastReader<TTo>(Delegate reader, Type from)
+    public static Reader<TTo> CastReader<TTo>(Delegate reader, TypeInfo from)
     {
       // Check if equals
-      var to = typeof(TTo);
+      var to = typeof(TTo).GetTypeInfo();
       if (to == from)
         return (Reader<TTo>)reader;
 
@@ -91,8 +92,8 @@ namespace ThirtyNineEighty.BinarySerializer
         return (Reader<TTo>)castedReader;
 
       // Create
-      var closedAdapter = typeof(ReaderMethodAdapter<,>).MakeGenericType(from, to);
-      var write = closedAdapter.GetMethod("Read");
+      var closedAdapter = typeof(ReaderMethodAdapter<,>).MakeGenericType(from.AsType(), to.AsType());
+      var write = closedAdapter.GetTypeInfo().GetMethod("Read");
       var adapter = Activator.CreateInstance(closedAdapter, reader);
       castedReader = write.CreateDelegate(typeof(Reader<TTo>), adapter);
 

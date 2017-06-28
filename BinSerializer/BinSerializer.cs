@@ -1,7 +1,11 @@
 ﻿using System.IO;
+using System.Reflection;
 using System.Security;
-using System.Security.Permissions;
 using ThirtyNineEighty.BinarySerializer.Types;
+
+#if NET45
+using System.Security.Permissions;
+#endif
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -9,16 +13,20 @@ namespace ThirtyNineEighty.BinarySerializer
   public static class BinSerializer
   {
     [SecuritySafeCritical]
+#if NET45
     [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
     [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
+#endif
     public static void Serialize<T>(Stream stream, T obj)
     {
       BinSerializer<T>.Serialize(stream, obj);
     }
 
     [SecuritySafeCritical]
+#if NET45
     [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
     [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
+#endif
     public static T Deserialize<T>(Stream stream)
     {
       return BinSerializer<T>.Deserialize(stream);
@@ -41,7 +49,8 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Writer<T> GetWriterInvoker()
     {
-      return typeof(T).IsValueType || typeof(T).IsSealed
+      var typeInfo = typeof(T).GetTypeInfo();
+      return typeInfo.IsValueType || typeInfo.IsSealed
         ? SerializerBuilder.CreateWriter<T>(typeof(T))
         : null;
     }
@@ -49,7 +58,8 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Reader<T> GetReaderInvoker()
     {
-      return typeof(T).IsValueType || typeof(T).IsSealed
+      var typeInfo = typeof(T).GetTypeInfo();
+      return typeInfo.IsValueType || typeInfo.IsSealed
         ? SerializerBuilder.CreateReader<T>(typeof(T))
         : null;
     }

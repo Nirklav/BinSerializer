@@ -5,9 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
 using System.Security;
 using ThirtyNineEighty.BinarySerializer.Types;
+
+#if NET45
+using System.Runtime.Serialization;
+#endif
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -16,22 +20,23 @@ namespace ThirtyNineEighty.BinarySerializer
 
   static class SerializerBuilder
   {
-    private static readonly ConcurrentDictionary<Type, Delegate> Writers = new ConcurrentDictionary<Type, Delegate>();
-    private static readonly ConcurrentDictionary<Type, Delegate> Readers = new ConcurrentDictionary<Type, Delegate>();
+    private static readonly ConcurrentDictionary<TypeInfo, Delegate> Writers = new ConcurrentDictionary<TypeInfo, Delegate>();
+    private static readonly ConcurrentDictionary<TypeInfo, Delegate> Readers = new ConcurrentDictionary<TypeInfo, Delegate>();
 
     #region writer
     [SecurityCritical]
     public static Writer<T> CreateWriter<T>(Type type)
     {
-      var method = Writers.GetOrAdd(type, CreateWriterMethod);
-      return MethodAdapter.CastWriter<T>(method, type);
+      var typeInfo = type.GetTypeInfo();
+      var method = Writers.GetOrAdd(typeInfo, CreateWriterMethod);
+      return MethodAdapter.CastWriter<T>(method, typeInfo);
     }
 
     [SecuritySafeCritical]
-    private static Delegate CreateWriterMethod(Type type)
+    private static Delegate CreateWriterMethod(TypeInfo type)
     {
       var methodName = string.Format("{0}_writer", type);
-      var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type }, typeof(SerializerBuilder), true);
+      var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type.AsType() }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
 
@@ -40,13 +45,13 @@ namespace ThirtyNineEighty.BinarySerializer
       else      
         GenerateArrayWriter(il, type);
 
-      return dynamicMethod.CreateDelegate(typeof(Writer<>).MakeGenericType(type));
+      return dynamicMethod.CreateDelegate(typeof(Writer<>).MakeGenericType(type.AsType()));
     }
 
     [SecurityCritical]
-    private static void GenerateObjectWriter(ILGenerator il, Type type)
+    private static void GenerateObjectWriter(ILGenerator il, TypeInfo type)
     {
-      var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
+      var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
 
       il.DeclareLocal(typeof(bool));
 
@@ -96,7 +101,7 @@ namespace ThirtyNineEighty.BinarySerializer
           var skipFieldLabel = il.DefineLabel();
 
           // If field is null then skip it
-          if (!field.Info.FieldType.IsValueType)
+          if (!field.Info.FieldType.GetTypeInfo().IsValueType)
           {
             il.Emit(OpCodes.Ldarg_1);                 // Load object
             il.Emit(OpCodes.Ldfld, field.Info);       // Read field form object
@@ -110,6 +115,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
           var serialize = typeof(BinSerializer<>)
             .MakeGenericType(field.Info.FieldType)
+            .GetTypeInfo()
             .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
           // Write field
@@ -138,13 +144,13 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecurityCritical]
-    private static void GenerateArrayWriter(ILGenerator il, Type type)
+    private static void GenerateArrayWriter(ILGenerator il, TypeInfo type)
     {
       var elementType = type.GetElementType();
 
-      var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
-      var getLowerBound = typeof(Array).GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
-      var serialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
+      var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
+      var getLowerBound = typeof(Array).GetTypeInfo().GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
+      var serialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetTypeInfo().GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
       il.DeclareLocal(typeof(int));  // Array length
       il.DeclareLocal(typeof(int));  // Array index
@@ -185,7 +191,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
         // Throw exception if non zero based
         il.Emit(OpCodes.Ldstr, "Non zero based arrays not supported.");
-        il.Emit(OpCodes.Newobj, typeof(InvalidOperationException).GetConstructor(new[] { typeof(string) }));
+        il.Emit(OpCodes.Newobj, typeof(InvalidOperationException).GetTypeInfo().GetConstructor(new[] { typeof(string) }));
         il.Emit(OpCodes.Throw);
 
         // Write array length
@@ -248,12 +254,13 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     public static Reader<T> CreateReader<T>(Type type)
     {
-      var method = Readers.GetOrAdd(type, CreateReaderMethod);
-      return MethodAdapter.CastReader<T>(method, type);
+      var typeInfo = type.GetTypeInfo();
+      var method = Readers.GetOrAdd(typeInfo, CreateReaderMethod);
+      return MethodAdapter.CastReader<T>(method, typeInfo);
     }
 
     [SecurityCritical]
-    private static Delegate CreateReaderMethod(Type type)
+    private static Delegate CreateReaderMethod(TypeInfo type)
     {
       var methodName = string.Format("{0}_reader", type);
       var dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
@@ -265,19 +272,19 @@ namespace ThirtyNineEighty.BinarySerializer
       else
         GenerateArrayReader(il, type);
 
-      return dynamicMethod.CreateDelegate(typeof(Reader<>).MakeGenericType(type));
+      return dynamicMethod.CreateDelegate(typeof(Reader<>).MakeGenericType(type.AsType()));
     }
 
     [SecurityCritical]
-    private static void GenerateObjectReader(ILGenerator il, Type type)
+    private static void GenerateObjectReader(ILGenerator il, TypeInfo type)
     {
-      var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
-      var defaultCtor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
-      var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
-      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type).GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
-      var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
+      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.AsType());
+      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.AsType());
+      var getTypeFromHandle = typeof(Type).GetTypeInfo().GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
+      var defaultCtor = type.GetConstructor(Type.EmptyTypes);
+      var getUninitializedObject = typeof(RuntimeHelpers).GetTypeInfo().GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
+      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type.AsType()).GetTypeInfo().GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
+      var stringEquals = typeof(string).GetTypeInfo().GetMethod("Equals", new[] { typeof(string), typeof(string), typeof(StringComparison) });
 
       il.DeclareLocal(typeof(int));    // ref if
       il.DeclareLocal(type);           // readed object
@@ -428,6 +435,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
             var deserialize = typeof(BinSerializer<>)
               .MakeGenericType(field.Info.FieldType)
+              .GetTypeInfo()
               .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
             // Prepeare stack to field set
@@ -468,9 +476,9 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var elementType = type.GetElementType();
 
-      var addRef = typeof(RefReaderWatcher).GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var tryGetRef = typeof(RefReaderWatcher).GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var deserialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
+      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
+      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
+      var deserialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetTypeInfo().GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
       // array type id already was readed
 
@@ -560,8 +568,8 @@ namespace ThirtyNineEighty.BinarySerializer
     // It's slower than generated.
     private static class DynamicObjectReader<T>
     {
-      private static readonly Type Type = typeof(T);
-      private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(typeof(T));
+      private static readonly TypeInfo Type = typeof(T).GetTypeInfo();
+      private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(Type);
 
       [SecurityCritical]
       static DynamicObjectReader()
@@ -594,7 +602,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
 
       [SecurityCritical]
-      private static Dictionary<string, FieldInfo> GetFieldsMap(Type type)
+      private static Dictionary<string, FieldInfo> GetFieldsMap(TypeInfo type)
       {
         return GetFields(type).ToDictionary(f => f.Attribute.Id, f => f.Info);
       }
@@ -615,18 +623,18 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecurityCritical]
-    private static IEnumerable<Field> GetFields(Type type)
+    private static IEnumerable<Field> GetFields(TypeInfo type)
     {
       var fields = type
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
         .Where(f => f.Attribute != null);
 
-      Type currentType = type;
+      var currentType = type;
       while (true)
       {
-        currentType = currentType.BaseType;
-        if (currentType == typeof(object))
+        currentType = currentType.BaseType.GetTypeInfo();
+        if (typeof(object) == currentType.AsType())
           break;
 
         var baseTypePrivateFields = currentType

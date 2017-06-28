@@ -22,19 +22,19 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Type id must be declared as non generic");
     }
 
-    public override MethodInfo GetTypeWriter(Type notNormalizedType)
+    public override MethodInfo GetTypeWriter(TypeInfo notNormalizedType)
     {
       var writer = base.GetTypeWriter(notNormalizedType);
       return GetMethod(writer, notNormalizedType);
     }
 
-    public override MethodInfo GetTypeReader(Type notNormalizedType)
+    public override MethodInfo GetTypeReader(TypeInfo notNormalizedType)
     {
       var reader = base.GetTypeReader(notNormalizedType);
       return GetMethod(reader, notNormalizedType);
     }
 
-    private static MethodInfo GetMethod(MethodInfo method, Type notNormalizedType)
+    private static MethodInfo GetMethod(MethodInfo method, TypeInfo notNormalizedType)
     {
       if (method == null)
         return null;
@@ -49,7 +49,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override Type GetType(string notNormalizedTypeId)
+    public override TypeInfo GetType(string notNormalizedTypeId)
     {
       var index = 0;
       var types = new Type[Type.GenericTypeParameters.Length];
@@ -57,12 +57,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       foreach (var genericArgumentId in EnumerateGenericTypeIds(notNormalizedTypeId))
         types[index++] = SerializerTypes.GetTypeImpl(genericArgumentId);
 
-      return Type.MakeGenericType(types);
+      return Type
+        .MakeGenericType(types)
+        .GetTypeInfo();
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override string GetTypeId(Type notNormalizedType)
+    public override string GetTypeId(TypeInfo notNormalizedType)
     {
       if (notNormalizedType.ContainsGenericParameters)
         throw new ArgumentException(string.Format("{0} conatins generic parameters.", Type));

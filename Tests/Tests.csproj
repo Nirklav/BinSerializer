@@ -57,7 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BinSerializer\BinSerializer.csproj">
-      <Project>{15edb439-1fed-4bc8-b27f-4a3b867a3f95}</Project>
+      <Project>{62da7455-54cf-486a-8600-ed78eba16ff1}</Project>
       <Name>BinSerializer</Name>
     </ProjectReference>
   </ItemGroup>

@@ -18,7 +18,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     public static BinTypeProcess Create<T>(BinWriter<T> writer, BinReader<T> reader)
     {
-      return new BinTypeProcess(null, null, null, writer.Method, reader.Method);
+      return new BinTypeProcess(null, null, null, writer.GetMethodInfo(), reader.GetMethodInfo());
     }
 
     public static BinTypeProcess Create(MethodInfo writer, MethodInfo reader)
@@ -140,7 +140,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Skiper has invalid return type. Method must return nothing.");
     }
 
-    internal bool IsValid(Type type)
+    internal bool IsValid(TypeInfo type)
     {
       if (TypeWriter != null && !IsGenericArgsValid(TypeWriter, type))
         return false;
@@ -151,7 +151,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return true;
     }
 
-    private static bool IsGenericArgsValid(MethodInfo method, Type type)
+    private static bool IsGenericArgsValid(MethodInfo method, TypeInfo type)
     {
       var methodGenericParameters = method.GetGenericArguments();
       var paramGenericParameters = type.GetGenericArguments();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace ThirtyNineEighty.BinarySerializer.Types
 {
@@ -11,11 +12,11 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       SerializerTypes.TypeEndToken
     };
 
-    private static readonly Dictionary<string, Type> ReservedTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, TypeInfo> ReservedTypes = new Dictionary<string, TypeInfo>(StringComparer.OrdinalIgnoreCase)
     {
-      { SerializerTypes.ArrayToken, typeof(Array) },
-      { SerializerTypes.DictionaryToken, typeof(Dictionary<,>) },
-      { SerializerTypes.ListToken, typeof(List<>) },
+      { SerializerTypes.ArrayToken, typeof(Array).GetTypeInfo() },
+      { SerializerTypes.DictionaryToken, typeof(Dictionary<,>).GetTypeInfo() },
+      { SerializerTypes.ListToken, typeof(List<>).GetTypeInfo() },
     };
 
     private static readonly HashSet<char> ReservedChars = new HashSet<char>
@@ -25,10 +26,15 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       '<', '>'
     };
 
-    public readonly Type Type;
+    public readonly TypeInfo Type;
     public readonly string TypeId;
-    
+
     public BinTypeDescription(Type type, string typeId)
+      : this(type.GetTypeInfo(), typeId)
+    {
+    }
+
+    public BinTypeDescription(TypeInfo type, string typeId)
     {
       // Type validation
       if (type.IsGenericType && !type.IsGenericTypeDefinition)
@@ -38,7 +44,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       if (ReservedIds.Contains(typeId))
         throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
 
-      Type reservedType;
+      TypeInfo reservedType;
       if (ReservedTypes.TryGetValue(typeId, out reservedType) && reservedType != type)
         throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
 

@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinSerializer", "BinSerializer\BinSerializer.csproj", "{15EDB439-1FED-4BC8-B27F-4A3B867A3F95}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{5B38FD43-3D78-48BA-B9BE-40CC0327F954}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerfTests", "PerfTests\PerfTests.csproj", "{3CDC0BD8-14F2-4EEE-A938-5C2C47F9CBAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinSerializer", "BinSerializer\BinSerializer.csproj", "{62DA7455-54CF-486A-8600-ED78EBA16FF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{15EDB439-1FED-4BC8-B27F-4A3B867A3F95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{15EDB439-1FED-4BC8-B27F-4A3B867A3F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{15EDB439-1FED-4BC8-B27F-4A3B867A3F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{15EDB439-1FED-4BC8-B27F-4A3B867A3F95}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B38FD43-3D78-48BA-B9BE-40CC0327F954}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B38FD43-3D78-48BA-B9BE-40CC0327F954}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B38FD43-3D78-48BA-B9BE-40CC0327F954}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{3CDC0BD8-14F2-4EEE-A938-5C2C47F9CBAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CDC0BD8-14F2-4EEE-A938-5C2C47F9CBAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CDC0BD8-14F2-4EEE-A938-5C2C47F9CBAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62DA7455-54CF-486A-8600-ED78EBA16FF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62DA7455-54CF-486A-8600-ED78EBA16FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62DA7455-54CF-486A-8600-ED78EBA16FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62DA7455-54CF-486A-8600-ED78EBA16FF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

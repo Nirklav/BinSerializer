@@ -40,7 +40,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static void Write(ILGenerator il, string text)
     {
       il.Emit(OpCodes.Ldstr, text);
-      il.Emit(OpCodes.Call, typeof(BSDebug).GetMethod("WriteImpl", BindingFlags.Static | BindingFlags.NonPublic));
+      il.Emit(OpCodes.Call, typeof(BSDebug).GetTypeInfo().GetMethod("WriteImpl", BindingFlags.Static | BindingFlags.NonPublic));
     }
 
     [Conditional("DEBUG")]
