@@ -20,36 +20,35 @@ namespace ThirtyNineEighty.BinarySerializer
 
   static class SerializerBuilder
   {
-    private static readonly ConcurrentDictionary<TypeInfo, Delegate> Writers = new ConcurrentDictionary<TypeInfo, Delegate>();
-    private static readonly ConcurrentDictionary<TypeInfo, Delegate> Readers = new ConcurrentDictionary<TypeInfo, Delegate>();
+    private static readonly ConcurrentDictionary<TypeImpl, Delegate> Writers = new ConcurrentDictionary<TypeImpl, Delegate>();
+    private static readonly ConcurrentDictionary<TypeImpl, Delegate> Readers = new ConcurrentDictionary<TypeImpl, Delegate>();
 
     #region writer
     [SecurityCritical]
-    public static Writer<T> CreateWriter<T>(Type type)
+    public static Writer<T> CreateWriter<T>(TypeImpl type)
     {
-      var typeInfo = type.GetTypeInfo();
-      var method = Writers.GetOrAdd(typeInfo, CreateWriterMethod);
-      return MethodAdapter.CastWriter<T>(method, typeInfo);
+      var method = Writers.GetOrAdd(type, CreateWriterMethod);
+      return MethodAdapter.CastWriter<T>(method, type);
     }
 
     [SecuritySafeCritical]
-    private static Delegate CreateWriterMethod(TypeInfo type)
+    private static Delegate CreateWriterMethod(TypeImpl type)
     {
       var methodName = string.Format("{0}_writer", type);
-      var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type.AsType() }, typeof(SerializerBuilder), true);
+      var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type.Type }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
 
-      if (!type.IsArray)
+      if (!type.TypeInfo.IsArray)
         GenerateObjectWriter(il, type);
       else      
         GenerateArrayWriter(il, type);
 
-      return dynamicMethod.CreateDelegate(typeof(Writer<>).MakeGenericType(type.AsType()));
+      return dynamicMethod.CreateDelegate(typeof(Writer<>).MakeGenericType(type.Type));
     }
 
     [SecurityCritical]
-    private static void GenerateObjectWriter(ILGenerator il, TypeInfo type)
+    private static void GenerateObjectWriter(ILGenerator il, TypeImpl type)
     {
       var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
 
@@ -57,14 +56,14 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var skipTypeLabel = il.DefineLabel();
 
-      BSDebug.TraceStart(il, "Write " + type.Name);
+      BSDebug.TraceStart(il, "Write " + type.TypeInfo.Name);
 
       // Write type
       il.Emit(OpCodes.Ldarg_0);
       il.Emit(OpCodes.Ldstr, SerializerTypes.GetTypeId(type));
       il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
-      if (!type.IsValueType)
+      if (!type.TypeInfo.IsValueType)
       {
         // Write refId
         il.Emit(OpCodes.Ldarg_0);           // Load stream
@@ -137,16 +136,16 @@ namespace ThirtyNineEighty.BinarySerializer
       // Skip type label
       il.MarkLabel(skipTypeLabel);
 
-      BSDebug.TraceEnd(il, "Write " + type.Name);
+      BSDebug.TraceEnd(il, "Write " + type.TypeInfo.Name);
 
       // End
       il.Emit(OpCodes.Ret);
     }
 
     [SecurityCritical]
-    private static void GenerateArrayWriter(ILGenerator il, TypeInfo type)
+    private static void GenerateArrayWriter(ILGenerator il, TypeImpl type)
     {
-      var elementType = type.GetElementType();
+      var elementType = type.TypeInfo.GetElementType();
 
       var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
       var getLowerBound = typeof(Array).GetTypeInfo().GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
@@ -161,7 +160,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var loopLabel = il.DefineLabel();
       var exitLoopLabel = il.DefineLabel();
 
-      BSDebug.TraceStart(il, "Write " + type.Name);
+      BSDebug.TraceStart(il, "Write " + type.TypeInfo.Name);
 
       // Write type
       il.Emit(OpCodes.Ldarg_0);
@@ -180,7 +179,7 @@ namespace ThirtyNineEighty.BinarySerializer
       il.Emit(OpCodes.Ldloc_2);
       il.Emit(OpCodes.Brfalse, skipLabel);
 
-      var dim = type.GetArrayRank();
+      var dim = type.TypeInfo.GetArrayRank();
       if (dim == 1)
       {
         // Dimension check
@@ -243,7 +242,7 @@ namespace ThirtyNineEighty.BinarySerializer
       il.MarkLabel(skipLabel);
       il.MarkLabel(exitLoopLabel);
 
-      BSDebug.TraceEnd(il, "Write " + type.FullName);
+      BSDebug.TraceEnd(il, "Write " + type.TypeInfo.FullName);
 
       // End
       il.Emit(OpCodes.Ret);
@@ -252,42 +251,41 @@ namespace ThirtyNineEighty.BinarySerializer
 
     #region reader
     [SecurityCritical]
-    public static Reader<T> CreateReader<T>(Type type)
+    public static Reader<T> CreateReader<T>(TypeImpl type)
     {
-      var typeInfo = type.GetTypeInfo();
-      var method = Readers.GetOrAdd(typeInfo, CreateReaderMethod);
-      return MethodAdapter.CastReader<T>(method, typeInfo);
+      var method = Readers.GetOrAdd(type, CreateReaderMethod);
+      return MethodAdapter.CastReader<T>(method, type);
     }
 
     [SecurityCritical]
-    private static Delegate CreateReaderMethod(TypeInfo type)
+    private static Delegate CreateReaderMethod(TypeImpl type)
     {
       var methodName = string.Format("{0}_reader", type);
-      var dynamicMethod = new DynamicMethod(methodName, type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
+      var dynamicMethod = new DynamicMethod(methodName, type.Type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
 
-      if (!type.IsArray)
+      if (!type.TypeInfo.IsArray)
         GenerateObjectReader(il, type);
       else
         GenerateArrayReader(il, type);
 
-      return dynamicMethod.CreateDelegate(typeof(Reader<>).MakeGenericType(type.AsType()));
+      return dynamicMethod.CreateDelegate(typeof(Reader<>).MakeGenericType(type.Type));
     }
 
     [SecurityCritical]
-    private static void GenerateObjectReader(ILGenerator il, TypeInfo type)
+    private static void GenerateObjectReader(ILGenerator il, TypeImpl type)
     {
-      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.AsType());
-      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.AsType());
+      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
+      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
       var getTypeFromHandle = typeof(Type).GetTypeInfo().GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
-      var defaultCtor = type.GetConstructor(Type.EmptyTypes);
+      var defaultCtor = type.TypeInfo.GetConstructor(Type.EmptyTypes);
       var getUninitializedObject = typeof(RuntimeHelpers).GetTypeInfo().GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
-      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type.AsType()).GetTypeInfo().GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
+      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type.Type).GetTypeInfo().GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
       var stringEquals = typeof(string).GetTypeInfo().GetMethod("Equals", new[] { typeof(string), typeof(string), typeof(StringComparison) });
 
       il.DeclareLocal(typeof(int));    // ref if
-      il.DeclareLocal(type);           // readed object
+      il.DeclareLocal(type.Type);      // readed object
       il.DeclareLocal(typeof(string)); // last readed field id
       il.DeclareLocal(typeof(int));    // readed object version
 
@@ -295,7 +293,7 @@ namespace ThirtyNineEighty.BinarySerializer
       var readFastLabel = il.DefineLabel();
 
       // Process reference id
-      if (!type.IsValueType)
+      if (!type.TypeInfo.IsValueType)
       {
         var tryLoadReferenceLabel = il.DefineLabel();
 
@@ -335,7 +333,7 @@ namespace ThirtyNineEighty.BinarySerializer
         il.Emit(OpCodes.Stloc_1); // Set result to local
 
         // Add reference to watcher
-        if (!type.IsValueType)
+        if (!type.TypeInfo.IsValueType)
         {
           il.Emit(OpCodes.Ldloc_0); // Load reference id
           il.Emit(OpCodes.Ldloc_1); // Load result object reference
@@ -345,7 +343,7 @@ namespace ThirtyNineEighty.BinarySerializer
       else
       {
         // Create
-        if (!type.IsValueType)
+        if (!type.TypeInfo.IsValueType)
         {
           if (defaultCtor != null)
           {
@@ -354,21 +352,21 @@ namespace ThirtyNineEighty.BinarySerializer
           }
           else
           {
-            il.Emit(OpCodes.Ldtoken, type);
+            il.Emit(OpCodes.Ldtoken, type.Type);
             il.Emit(OpCodes.Call, getTypeFromHandle);
             il.Emit(OpCodes.Call, getUninitializedObject);
-            il.Emit(OpCodes.Castclass, type);
+            il.Emit(OpCodes.Castclass, type.Type);
             il.Emit(OpCodes.Stloc_1); // Set result to local
           }
         }
         else
         {
           il.Emit(OpCodes.Ldloca_S, (byte)1); // Load result local address
-          il.Emit(OpCodes.Initobj, type);
+          il.Emit(OpCodes.Initobj, type.Type);
         }
 
         // Add reference to watcher
-        if (!type.IsValueType)
+        if (!type.TypeInfo.IsValueType)
         {
           il.Emit(OpCodes.Ldloc_0); // Load reference id
           il.Emit(OpCodes.Ldloc_1); // Load result object reference
@@ -439,7 +437,7 @@ namespace ThirtyNineEighty.BinarySerializer
               .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
             // Prepeare stack to field set
-            if (type.IsValueType)
+            if (type.TypeInfo.IsValueType)
               il.Emit(OpCodes.Ldloca_S, (byte)1);
             else
               il.Emit(OpCodes.Ldloc_1);
@@ -466,18 +464,18 @@ namespace ThirtyNineEighty.BinarySerializer
       il.MarkLabel(resultLabel);
       il.Emit(OpCodes.Ldloc_1);
 
-      BSDebug.TraceEnd(il, "Read " + type.Name);
+      BSDebug.TraceEnd(il, "Read " + type.TypeInfo.Name);
 
       il.Emit(OpCodes.Ret);
     }
 
     [SecurityCritical]
-    private static void GenerateArrayReader(ILGenerator il, Type type)
+    private static void GenerateArrayReader(ILGenerator il, TypeImpl type)
     {
-      var elementType = type.GetElementType();
+      var elementType = type.TypeInfo.GetElementType();
 
-      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
-      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type);
+      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
+      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
       var deserialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetTypeInfo().GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
       // array type id already was readed
@@ -485,7 +483,7 @@ namespace ThirtyNineEighty.BinarySerializer
       il.DeclareLocal(typeof(int)); // Ref id
       il.DeclareLocal(typeof(int)); // Array length
       il.DeclareLocal(typeof(int)); // Current index
-      il.DeclareLocal(type);        // Result array
+      il.DeclareLocal(type.Type);   // Result array
 
       var loopLabel = il.DefineLabel();
       var resultLabel = il.DefineLabel();
@@ -568,7 +566,7 @@ namespace ThirtyNineEighty.BinarySerializer
     // It's slower than generated.
     private static class DynamicObjectReader<T>
     {
-      private static readonly TypeInfo Type = typeof(T).GetTypeInfo();
+      private static readonly TypeImpl Type = new TypeImpl(typeof(T));
       private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(Type);
 
       [SecurityCritical]
@@ -602,7 +600,7 @@ namespace ThirtyNineEighty.BinarySerializer
       }
 
       [SecurityCritical]
-      private static Dictionary<string, FieldInfo> GetFieldsMap(TypeInfo type)
+      private static Dictionary<string, FieldInfo> GetFieldsMap(TypeImpl type)
       {
         return GetFields(type).ToDictionary(f => f.Attribute.Id, f => f.Info);
       }
@@ -623,9 +621,9 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecurityCritical]
-    private static IEnumerable<Field> GetFields(TypeInfo type)
+    private static IEnumerable<Field> GetFields(TypeImpl type)
     {
-      var fields = type
+      var fields = type.TypeInfo
         .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
         .Where(f => f.Attribute != null);
@@ -633,11 +631,11 @@ namespace ThirtyNineEighty.BinarySerializer
       var currentType = type;
       while (true)
       {
-        currentType = currentType.BaseType.GetTypeInfo();
-        if (typeof(object) == currentType.AsType())
+        currentType = new TypeImpl(currentType.TypeInfo.BaseType);
+        if (typeof(object) == currentType)
           break;
 
-        var baseTypePrivateFields = currentType
+        var baseTypePrivateFields = currentType.TypeInfo
           .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
           .Where(f => !f.IsFamily)
           .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))

@@ -6,7 +6,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 {
   class SerializerTypeInfo
   {
-    protected readonly TypeInfo Type;
+    protected readonly TypeImpl Type;
     protected readonly string TypeId;
 
     public readonly int Version;
@@ -46,26 +46,26 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       }
     }
 
-    public virtual MethodInfo GetTypeWriter(TypeInfo notNormalizedType)
+    public virtual MethodInfo GetTypeWriter(TypeImpl notNormalizedType)
     {
       return _typeWriter;
     }
 
-    public virtual MethodInfo GetTypeReader(TypeInfo notNormalizedType)
+    public virtual MethodInfo GetTypeReader(TypeImpl notNormalizedType)
     {
       return _typeReader;
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public virtual TypeInfo GetType(string notNormalizedTypeId)
+    public virtual TypeImpl GetType(string notNormalizedTypeId)
     {
       return Type;
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public virtual string GetTypeId(TypeInfo notNormalizedType)
+    public virtual string GetTypeId(TypeImpl notNormalizedType)
     {
       return TypeId;
     }

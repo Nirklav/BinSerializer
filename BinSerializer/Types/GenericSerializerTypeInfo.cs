@@ -12,36 +12,36 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public GenericSerializerTypeInfo(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process) 
       : base(description, version, process)
     {
-      if (!Type.IsGenericType)
+      if (!Type.TypeInfo.IsGenericType)
         throw new ArgumentException("Type must be generic.");
 
-      if (!Type.IsGenericTypeDefinition)
+      if (!Type.TypeInfo.IsGenericTypeDefinition)
         throw new ArgumentException("Generic type must be opened.");
 
       if (IsGenericTypeId(TypeId))
         throw new ArgumentException("Type id must be declared as non generic");
     }
 
-    public override MethodInfo GetTypeWriter(TypeInfo notNormalizedType)
+    public override MethodInfo GetTypeWriter(TypeImpl notNormalizedType)
     {
       var writer = base.GetTypeWriter(notNormalizedType);
       return GetMethod(writer, notNormalizedType);
     }
 
-    public override MethodInfo GetTypeReader(TypeInfo notNormalizedType)
+    public override MethodInfo GetTypeReader(TypeImpl notNormalizedType)
     {
       var reader = base.GetTypeReader(notNormalizedType);
       return GetMethod(reader, notNormalizedType);
     }
 
-    private static MethodInfo GetMethod(MethodInfo method, TypeInfo notNormalizedType)
+    private static MethodInfo GetMethod(MethodInfo method, TypeImpl notNormalizedType)
     {
       if (method == null)
         return null;
 
       if (method.IsGenericMethodDefinition)
       {
-        var genericArgs = notNormalizedType.GetGenericArguments();
+        var genericArgs = notNormalizedType.TypeInfo.GetGenericArguments();
         return method.MakeGenericMethod(genericArgs);
       }
       return method;
@@ -49,34 +49,35 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override TypeInfo GetType(string notNormalizedTypeId)
+    public override TypeImpl GetType(string notNormalizedTypeId)
     {
       var index = 0;
-      var types = new Type[Type.GenericTypeParameters.Length];
+      var types = new Type[Type.TypeInfo.GenericTypeParameters.Length];
 
       foreach (var genericArgumentId in EnumerateGenericTypeIds(notNormalizedTypeId))
-        types[index++] = SerializerTypes.GetTypeImpl(genericArgumentId);
+      {
+        var type = SerializerTypes.GetTypeImpl(genericArgumentId);
+        types[index++] = type.Type;
+      }
 
-      return Type
-        .MakeGenericType(types)
-        .GetTypeInfo();
+      return new TypeImpl(Type.TypeInfo.MakeGenericType(types));
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override string GetTypeId(TypeInfo notNormalizedType)
+    public override string GetTypeId(TypeImpl notNormalizedType)
     {
-      if (notNormalizedType.ContainsGenericParameters)
+      if (notNormalizedType.TypeInfo.ContainsGenericParameters)
         throw new ArgumentException(string.Format("{0} conatins generic parameters.", Type));
 
       var builder = new StringBuilder();
       builder.Append(TypeId);
       builder.Append('[');
 
-      var argumentsCount = notNormalizedType.GenericTypeArguments.Length;
+      var argumentsCount = notNormalizedType.TypeInfo.GenericTypeArguments.Length;
       for (int i = 0; i < argumentsCount; i++)
       {
-        var genericTypeArgument = notNormalizedType.GenericTypeArguments[i];
+        var genericTypeArgument = notNormalizedType.TypeInfo.GenericTypeArguments[i];
         var typeId = SerializerTypes.GetTypeIdImpl(genericTypeArgument);
 
         builder.Append(typeId);

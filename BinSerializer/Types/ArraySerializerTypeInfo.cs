@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Security;
 using System.Text;
 
@@ -11,7 +10,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public ArraySerializerTypeInfo(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process) 
       : base(description, version, process)
     {
-      if (description.Type != typeof(Array).GetTypeInfo())
+      if (description.Type != typeof(Array))
         throw new ArgumentException("Type must be an array.");
 
       if (!string.Equals(description.TypeId, SerializerTypes.ArrayToken, StringComparison.Ordinal))
@@ -20,22 +19,20 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override TypeInfo GetType(string notNormalizedTypeId)
+    public override TypeImpl GetType(string notNormalizedTypeId)
     {
       var elementTypeIdStartIdx = notNormalizedTypeId.IndexOf('[');
       var elementTypeId = notNormalizedTypeId.Substring(elementTypeIdStartIdx + 1, notNormalizedTypeId.Length - elementTypeIdStartIdx - 2);
       var elementType = SerializerTypes.GetTypeImpl(elementTypeId);
 
-      return elementType
-        .MakeArrayType()
-        .GetTypeInfo();
+      return new TypeImpl(elementType.TypeInfo.MakeArrayType());
     }
 
     // Must be called under SerializerTypes read lock
     [SecuritySafeCritical]
-    public override string GetTypeId(TypeInfo notNormalizedType)
+    public override string GetTypeId(TypeImpl notNormalizedType)
     {
-      var elementType = notNormalizedType.GetElementType();
+      var elementType = notNormalizedType.TypeInfo.GetElementType();
       var elementTypeId = SerializerTypes.GetTypeIdImpl(elementType);
 
       var builder = new StringBuilder();

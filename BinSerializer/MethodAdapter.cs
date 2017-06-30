@@ -10,10 +10,10 @@ namespace ThirtyNineEighty.BinarySerializer
   {
     private struct TypePair : IEquatable<TypePair>
     {
-      private readonly TypeInfo _from;
-      private readonly TypeInfo _to;
+      private readonly TypeImpl _from;
+      private readonly TypeImpl _to;
 
-      public TypePair(TypeInfo from, TypeInfo to)
+      public TypePair(TypeImpl from, TypeImpl to)
       {
         _from = from;
         _to = to;
@@ -43,15 +43,15 @@ namespace ThirtyNineEighty.BinarySerializer
     private static readonly ConcurrentDictionary<TypePair, Delegate> CachedReaders = new ConcurrentDictionary<TypePair, Delegate>(); 
 
     [SecurityCritical]
-    public static Writer<TTo> CastWriter<TTo>(Delegate writer, TypeInfo from)
+    public static Writer<TTo> CastWriter<TTo>(Delegate writer, TypeImpl from)
     {
       // Check if equals
-      var to = typeof(TTo).GetTypeInfo();
+      var to = new TypeImpl(typeof(TTo));
       if (to == from)
         return (Writer<TTo>)writer;
 
       // Value types not supported covariance/contravariance
-      if (!from.IsValueType && from.IsAssignableFrom(to))
+      if (!from.TypeInfo.IsValueType && from.TypeInfo.IsAssignableFrom(to.Type))
         return (Writer<TTo>)writer;
 
       // Check cache
@@ -61,7 +61,7 @@ namespace ThirtyNineEighty.BinarySerializer
         return (Writer<TTo>)castedWriter;
 
       // Create
-      var closedAdapter = typeof(WriterMethodAdapter<,>).MakeGenericType(from.AsType(), to.AsType());
+      var closedAdapter = typeof(WriterMethodAdapter<,>).MakeGenericType(from.Type, to.Type);
       var write = closedAdapter.GetTypeInfo().GetMethod("Write");
       var adapter = Activator.CreateInstance(closedAdapter, writer);
       castedWriter = write.CreateDelegate(typeof(Writer<TTo>), adapter);
@@ -74,15 +74,15 @@ namespace ThirtyNineEighty.BinarySerializer
     }
 
     [SecurityCritical]
-    public static Reader<TTo> CastReader<TTo>(Delegate reader, TypeInfo from)
+    public static Reader<TTo> CastReader<TTo>(Delegate reader, TypeImpl from)
     {
       // Check if equals
-      var to = typeof(TTo).GetTypeInfo();
+      var to = new TypeImpl(typeof(TTo));
       if (to == from)
         return (Reader<TTo>)reader;
 
       // Value types not supported covariance/contravariance
-      if (!from.IsValueType && to.IsAssignableFrom(from))
+      if (!from.TypeInfo.IsValueType && to.TypeInfo.IsAssignableFrom(from.Type))
         return (Reader<TTo>)reader;
 
       // Check cache
@@ -92,7 +92,7 @@ namespace ThirtyNineEighty.BinarySerializer
         return (Reader<TTo>)castedReader;
 
       // Create
-      var closedAdapter = typeof(ReaderMethodAdapter<,>).MakeGenericType(from.AsType(), to.AsType());
+      var closedAdapter = typeof(ReaderMethodAdapter<,>).MakeGenericType(from.Type, to.Type);
       var write = closedAdapter.GetTypeInfo().GetMethod("Read");
       var adapter = Activator.CreateInstance(closedAdapter, reader);
       castedReader = write.CreateDelegate(typeof(Reader<TTo>), adapter);

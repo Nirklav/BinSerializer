@@ -140,7 +140,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
         throw new ArgumentException("Skiper has invalid return type. Method must return nothing.");
     }
 
-    internal bool IsValid(TypeInfo type)
+    internal bool IsValid(TypeImpl type)
     {
       if (TypeWriter != null && !IsGenericArgsValid(TypeWriter, type))
         return false;
@@ -151,10 +151,10 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       return true;
     }
 
-    private static bool IsGenericArgsValid(MethodInfo method, TypeInfo type)
+    private static bool IsGenericArgsValid(MethodInfo method, TypeImpl type)
     {
       var methodGenericParameters = method.GetGenericArguments();
-      var paramGenericParameters = type.GetGenericArguments();
+      var paramGenericParameters = type.TypeInfo.GetGenericArguments();
       return methodGenericParameters.Length == paramGenericParameters.Length;
     }
   }

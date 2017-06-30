@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -17,12 +16,12 @@ namespace ThirtyNineEighty.BinarySerializer
   [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
   public class BinStreamExtensionAttribute : Attribute
   {
-    public TypeInfo Type { get; private set; }
+    public Type Type { get; private set; }
     public StreamExtensionKind Kind { get; private set; }
 
     public BinStreamExtensionAttribute(Type type, StreamExtensionKind kind)
     {
-      Type = type.GetTypeInfo();
+      Type = type;
       Kind = kind;
     }
   }

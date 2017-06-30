@@ -49,18 +49,18 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Writer<T> GetWriterInvoker()
     {
-      var typeInfo = typeof(T).GetTypeInfo();
-      return typeInfo.IsValueType || typeInfo.IsSealed
-        ? SerializerBuilder.CreateWriter<T>(typeof(T))
+      var type = new TypeImpl(typeof(T));
+      return type.TypeInfo.IsValueType || type.TypeInfo.IsSealed
+        ? SerializerBuilder.CreateWriter<T>(type)
         : null;
     }
 
     [SecurityCritical]
     private static Reader<T> GetReaderInvoker()
     {
-      var typeInfo = typeof(T).GetTypeInfo();
-      return typeInfo.IsValueType || typeInfo.IsSealed
-        ? SerializerBuilder.CreateReader<T>(typeof(T))
+      var type = new TypeImpl(typeof(T));
+      return type.TypeInfo.IsValueType || type.TypeInfo.IsSealed
+        ? SerializerBuilder.CreateReader<T>(type)
         : null;
     }
 
@@ -74,7 +74,7 @@ namespace ThirtyNineEighty.BinarySerializer
         else
         {
           var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
-          var writer = SerializerBuilder.CreateWriter<T>(type);
+          var writer = SerializerBuilder.CreateWriter<T>(new TypeImpl(type));
           writer(stream, obj);
         }
       }
