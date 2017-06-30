@@ -56,13 +56,12 @@ namespace ThirtyNineEighty.BinarySerializer
 
       // Check cache
       var key = new TypePair(from, to);
-      Delegate castedWriter;
-      if (CachedWriters.TryGetValue(key, out castedWriter))
+      if (CachedWriters.TryGetValue(key, out Delegate castedWriter))
         return (Writer<TTo>)castedWriter;
 
       // Create
       var closedAdapter = typeof(WriterMethodAdapter<,>).MakeGenericType(from.Type, to.Type);
-      var write = closedAdapter.GetTypeInfo().GetMethod("Write");
+      var write = closedAdapter.GetTypeInfo().GetMethod(nameof(WriterMethodAdapter<object, object>.Write));
       var adapter = Activator.CreateInstance(closedAdapter, writer);
       castedWriter = write.CreateDelegate(typeof(Writer<TTo>), adapter);
 
@@ -87,13 +86,12 @@ namespace ThirtyNineEighty.BinarySerializer
 
       // Check cache
       var key = new TypePair(from, to);
-      Delegate castedReader;
-      if (CachedReaders.TryGetValue(key, out castedReader))
+      if (CachedReaders.TryGetValue(key, out Delegate castedReader))
         return (Reader<TTo>)castedReader;
 
       // Create
       var closedAdapter = typeof(ReaderMethodAdapter<,>).MakeGenericType(from.Type, to.Type);
-      var write = closedAdapter.GetTypeInfo().GetMethod("Read");
+      var write = closedAdapter.GetTypeInfo().GetMethod(nameof(ReaderMethodAdapter<object, object>.Read));
       var adapter = Activator.CreateInstance(closedAdapter, reader);
       castedReader = write.CreateDelegate(typeof(Reader<TTo>), adapter);
 

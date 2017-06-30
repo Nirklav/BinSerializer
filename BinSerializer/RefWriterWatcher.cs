@@ -65,13 +65,12 @@ namespace ThirtyNineEighty.BinarySerializer
         return 0;
       }
 
-      int refId;
-      if (container.RefIds.TryGetValue(reference, out refId))
+      if (container.RefIds.TryGetValue(reference, out int refId))
       {
         created = false;
         return refId;
       }
-      
+
       container.RefIds.Add(reference, refId = ++container.LastRefId);
       created = true;
       return refId;

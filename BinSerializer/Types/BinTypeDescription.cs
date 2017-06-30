@@ -41,11 +41,10 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
       // Type id validation
       if (ReservedIds.Contains(typeId))
-        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
+        throw new ArgumentException($"This id reserved by serializer { typeId }.");
 
-      Type reservedType;
-      if (ReservedTypes.TryGetValue(typeId, out reservedType) && reservedType != type)
-        throw new ArgumentException(string.Format("This id reserved by serializer {0}.", typeId));
+      if (ReservedTypes.TryGetValue(typeId, out Type reservedType) && reservedType != type)
+        throw new ArgumentException($"This id reserved by serializer { typeId }.");
 
       foreach (var ch in typeId)
         if (ReservedChars.Contains(ch))

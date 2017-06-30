@@ -34,7 +34,7 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     private static Delegate CreateWriterMethod(TypeImpl type)
     {
-      var methodName = string.Format("{0}_writer", type);
+      var methodName = $"{ type }_writer";
       var dynamicMethod = new DynamicMethod(methodName, typeof(void), new[] { typeof(Stream), type.Type }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
@@ -50,7 +50,9 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static void GenerateObjectWriter(ILGenerator il, TypeImpl type)
     {
-      var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
+      var getRefId = typeof(RefWriterWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefWriterWatcher.GetRefId), BindingFlags.Public | BindingFlags.Static);
 
       il.DeclareLocal(typeof(bool));
 
@@ -115,7 +117,7 @@ namespace ThirtyNineEighty.BinarySerializer
           var serialize = typeof(BinSerializer<>)
             .MakeGenericType(field.Info.FieldType)
             .GetTypeInfo()
-            .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
+            .GetMethod(nameof(BinSerializer<object>.Serialize), BindingFlags.Static | BindingFlags.Public);
 
           // Write field
           il.Emit(OpCodes.Ldarg_0);           // Load stream
@@ -147,9 +149,18 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var elementType = type.TypeInfo.GetElementType();
 
-      var getRefId = typeof(RefWriterWatcher).GetTypeInfo().GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
-      var getLowerBound = typeof(Array).GetTypeInfo().GetMethod("GetLowerBound", BindingFlags.Instance | BindingFlags.Public);
-      var serialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetTypeInfo().GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
+      var getRefId = typeof(RefWriterWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefWriterWatcher.GetRefId), BindingFlags.Public | BindingFlags.Static);
+
+      var getLowerBound = typeof(Array)
+        .GetTypeInfo()
+        .GetMethod(nameof(Array.GetLowerBound), BindingFlags.Instance | BindingFlags.Public);
+
+      var serialize = typeof(BinSerializer<>)
+        .MakeGenericType(elementType)
+        .GetTypeInfo()
+        .GetMethod(nameof(BinSerializer<object>.Serialize), BindingFlags.Static | BindingFlags.Public);
 
       il.DeclareLocal(typeof(int));  // Array length
       il.DeclareLocal(typeof(int));  // Array index
@@ -260,7 +271,7 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static Delegate CreateReaderMethod(TypeImpl type)
     {
-      var methodName = string.Format("{0}_reader", type);
+      var methodName = $"{ type }_reader";
       var dynamicMethod = new DynamicMethod(methodName, type.Type, new[] { typeof(Stream) }, typeof(SerializerBuilder), true);
 
       var il = dynamicMethod.GetILGenerator();
@@ -276,13 +287,34 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecurityCritical]
     private static void GenerateObjectReader(ILGenerator il, TypeImpl type)
     {
-      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
-      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
-      var getTypeFromHandle = typeof(Type).GetTypeInfo().GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
+      var addRef = typeof(RefReaderWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefReaderWatcher.AddRef), BindingFlags.Public | BindingFlags.Static)
+        .MakeGenericMethod(type.Type);
+
+      var tryGetRef = typeof(RefReaderWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefReaderWatcher.TryGetRef), BindingFlags.Public | BindingFlags.Static)
+        .MakeGenericMethod(type.Type);
+
+      var getTypeFromHandle = typeof(Type)
+        .GetTypeInfo()
+        .GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+
       var defaultCtor = type.TypeInfo.GetConstructor(Type.EmptyTypes);
-      var getUninitializedObject = typeof(RuntimeHelpers).GetTypeInfo().GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
-      var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type.Type).GetTypeInfo().GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
-      var stringEquals = typeof(string).GetTypeInfo().GetMethod("Equals", new[] { typeof(string), typeof(string), typeof(StringComparison) });
+
+      var getUninitializedObject = typeof(RuntimeHelpers)
+        .GetTypeInfo()
+        .GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
+
+      var dynamicObjectRead = typeof(DynamicObjectReader<>)
+        .MakeGenericType(type.Type)
+        .GetTypeInfo()
+        .GetMethod(nameof(DynamicObjectReader<object>.Read), BindingFlags.Public | BindingFlags.Static);
+
+      var stringEquals = typeof(string)
+        .GetTypeInfo()
+        .GetMethod(nameof(string.Equals), new[] { typeof(string), typeof(string), typeof(StringComparison) });
 
       il.DeclareLocal(typeof(int));    // ref if
       il.DeclareLocal(type.Type);      // readed object
@@ -434,7 +466,7 @@ namespace ThirtyNineEighty.BinarySerializer
             var deserialize = typeof(BinSerializer<>)
               .MakeGenericType(field.Info.FieldType)
               .GetTypeInfo()
-              .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
+              .GetMethod(nameof(BinSerializer<object>.Deserialize), BindingFlags.Static | BindingFlags.Public);
 
             // Prepeare stack to field set
             if (type.TypeInfo.IsValueType)
@@ -474,9 +506,20 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       var elementType = type.TypeInfo.GetElementType();
 
-      var addRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("AddRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
-      var tryGetRef = typeof(RefReaderWatcher).GetTypeInfo().GetMethod("TryGetRef", BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(type.Type);
-      var deserialize = typeof(BinSerializer<>).MakeGenericType(elementType).GetTypeInfo().GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
+      var addRef = typeof(RefReaderWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefReaderWatcher.AddRef), BindingFlags.Public | BindingFlags.Static)
+        .MakeGenericMethod(type.Type);
+
+      var tryGetRef = typeof(RefReaderWatcher)
+        .GetTypeInfo()
+        .GetMethod(nameof(RefReaderWatcher.TryGetRef), BindingFlags.Public | BindingFlags.Static)
+        .MakeGenericMethod(type.Type);
+
+      var deserialize = typeof(BinSerializer<>)
+        .MakeGenericType(elementType)
+        .GetTypeInfo()
+        .GetMethod(nameof(BinSerializer<object>.Deserialize), BindingFlags.Static | BindingFlags.Public);
 
       // array type id already was readed
 
@@ -580,7 +623,7 @@ namespace ThirtyNineEighty.BinarySerializer
       {
         var minSupportedVersion = SerializerTypes.GetMinSupported(Type);
         if (version < minSupportedVersion)
-          throw new InvalidDataException(string.Format("Received version less than minimum supported ({0} < {1})", version, minSupportedVersion));
+          throw new InvalidDataException($"Received version less than minimum supported ({ version } < { minSupportedVersion })");
 
         var boxedInstance = (object)instance;
         while (true)
@@ -589,8 +632,7 @@ namespace ThirtyNineEighty.BinarySerializer
           if (token == SerializerTypes.TypeEndToken)
             break;
 
-          FieldInfo field;
-          if (!FieldsMap.TryGetValue(token, out field))
+          if (!FieldsMap.TryGetValue(token, out FieldInfo field))
             continue;
 
           field.SetValue(boxedInstance, BinSerializer<object>.Deserialize(stream));
@@ -648,9 +690,9 @@ namespace ThirtyNineEighty.BinarySerializer
       foreach (var field in fields.OrderBy(p => p.Attribute.Id))
       {
         if (!declaredIds.Add(field.Attribute.Id))
-          throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", field.Attribute.Id, field.Info.DeclaringType));
+          throw new ArgumentException($"Field \"{ field.Attribute.Id }\" declared twice in { field.Info.DeclaringType } type");
         if (field.Info.IsInitOnly)
-          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {1}", field.Info.Name, field.Info.DeclaringType));
+          throw new ArgumentException($"Field { field.Info.Name } can't be readonly (IsInitOnly = true). For type { field.Info.DeclaringType }");
         yield return field;
       }
     }

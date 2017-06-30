@@ -11,28 +11,28 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     public static void TraceStart(string methodName)
     {
-      WriteImpl(string.Format("Type start {0}\r\n", methodName));
+      WriteImpl($"Type start { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     [SecuritySafeCritical]
     public static void TraceEnd(string methodName)
     {
-      WriteImpl(string.Format("Type end {0}\r\n", methodName));
+      WriteImpl($"Type end { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     [SecuritySafeCritical]
     public static void TraceStart(ILGenerator il, string methodName)
     {
-      Write(il, string.Format("Type start {0}\r\n", methodName));
+      Write(il, $"Type start { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
     [SecuritySafeCritical]
     public static void TraceEnd(ILGenerator il, string methodName)
     {
-      Write(il, string.Format("Type end {0}\r\n", methodName));
+      Write(il, $"Type end { methodName }\r\n");
     }
 
     [Conditional("DEBUG")]
@@ -47,14 +47,14 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     public static void TraceStart(string methodName, long pos)
     {
-      WriteImpl(string.Format("Start {0} stream pos {1}\r\n", methodName, pos));
+      WriteImpl($"Start { methodName } stream pos { pos }\r\n");
     }
 
     [Conditional("DEBUG")]
     [SecuritySafeCritical]
     public static void TraceEnd(string methodName, long pos)
     {
-      WriteImpl(string.Format("End {0} stream pos {1}\r\n", methodName, pos));
+      WriteImpl($"End { methodName } stream pos { pos }\r\n");
     }
 
     [Conditional("DEBUG")]

@@ -49,8 +49,7 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     public static bool TryGetRef<T>(int refId, out T reference)
     {
-      object objRef;
-      var result = _container.IdToRef.TryGetValue(refId, out objRef);
+      var result = _container.IdToRef.TryGetValue(refId, out object objRef);
       reference = (T)objRef;
       return result;
     }

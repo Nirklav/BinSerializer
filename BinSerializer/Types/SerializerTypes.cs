@@ -131,10 +131,10 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static void AddTypeImpl(BinTypeDescription description, BinTypeVersion version, BinTypeProcess process)
     {
       if (TypesById.ContainsKey(description.TypeId))
-        throw new InvalidOperationException(string.Format("TypeInfo with this id already exist {0} by type {1}.", description.TypeId, description.Type));
+        throw new InvalidOperationException($"TypeInfo with this id already exist { description.TypeId } by type { description.Type }.");
 
       if (TypesByType.ContainsKey(description.Type))
-        throw new InvalidOperationException(string.Format("TypeInfo with this Type already exist {0} by id {1}.", description.Type, description.TypeId));
+        throw new InvalidOperationException($"TypeInfo with this Type already exist { description.Type } by id { description.TypeId }.");
 
       if (description.Type.TypeInfo.IsArray)
         throw new ArgumentException("Can't register array.");
@@ -233,8 +233,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     internal static string GetTypeIdImpl(TypeImpl type)
     {
       // Try return from cache
-      string cachedTypeId;
-      if (TypeToTypeIdCache.TryGetValue(type, out cachedTypeId))
+      if (TypeToTypeIdCache.TryGetValue(type, out string cachedTypeId))
         return cachedTypeId;
 
       // Resolve type id
@@ -270,8 +269,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     internal static TypeImpl GetTypeImpl(string typeId)
     {
       // Try return from cache
-      TypeImpl cachedType;
-      if (TypeIdToTypeCache.TryGetValue(typeId, out cachedType))
+      if (TypeIdToTypeCache.TryGetValue(typeId, out TypeImpl cachedType))
         return cachedType;
 
       // Resolve type
@@ -410,8 +408,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         // Try get from cache
-        MethodInfo writer;
-        if (TypeToTypeWritersCache.TryGetValue(type, out writer))
+        if (TypeToTypeWritersCache.TryGetValue(type, out MethodInfo writer))
           return writer;
 
         // Build
@@ -443,8 +440,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       try
       {
         // Try get from cache
-        MethodInfo reader;
-        if (TypeToTypeReadersCache.TryGetValue(type, out reader))
+        if (TypeToTypeReadersCache.TryGetValue(type, out MethodInfo reader))
           return reader;
 
         // Build
@@ -470,9 +466,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static SerializerTypeInfo GetTypeInfo(TypeImpl type)
     {
       var normalizedType = Normalize(type);
-      SerializerTypeInfo info;
-      if (!TypesByType.TryGetValue(normalizedType, out info))
-        throw new ArgumentException(string.Format("TypeInfo not found. For type {0}", type));
+      if (!TypesByType.TryGetValue(normalizedType, out SerializerTypeInfo info))
+        throw new ArgumentException($"TypeInfo not found. For type { type }");
       return info;
     }
 
@@ -481,9 +476,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static SerializerTypeInfo GetTypeInfo(string typeId)
     {
       var normalizedTypeId = Normalize(typeId);
-      SerializerTypeInfo info;
-      if (!TypesById.TryGetValue(normalizedTypeId, out info))
-        throw new ArgumentException(string.Format("TypeInfo not found. For typeId {0}", typeId));
+      if (!TypesById.TryGetValue(normalizedTypeId, out SerializerTypeInfo info))
+        throw new ArgumentException($"TypeInfo not found. For typeId { typeId }");
       return info;
     }
     #endregion

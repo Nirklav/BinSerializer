@@ -68,7 +68,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     public override string GetTypeId(TypeImpl notNormalizedType)
     {
       if (notNormalizedType.TypeInfo.ContainsGenericParameters)
-        throw new ArgumentException(string.Format("{0} conatins generic parameters.", Type));
+        throw new ArgumentException($"{ Type } conatins generic parameters."));
 
       var builder = new StringBuilder();
       builder.Append(TypeId);
