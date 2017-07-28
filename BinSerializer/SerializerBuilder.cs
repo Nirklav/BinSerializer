@@ -421,7 +421,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
             // Compare field id with endToken
             il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
-            il.Emit(OpCodes.Ldstr, SerializerTypes.TypeEndToken);   // Load field id
+            il.Emit(OpCodes.Ldstr, SerializerTypes.TypeEndToken);   // Load endToken id
             il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
             il.Emit(OpCodes.Call, stringEquals);                    // Compare
             il.Emit(OpCodes.Brtrue, resultLabel);                   // This is the end
