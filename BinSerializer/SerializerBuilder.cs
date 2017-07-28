@@ -419,6 +419,13 @@ namespace ThirtyNineEighty.BinarySerializer
               nextFieldLabel = il.DefineLabel();
             }
 
+            // Compare field id with endToken
+            il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
+            il.Emit(OpCodes.Ldstr, SerializerTypes.TypeEndToken);   // Load field id
+            il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
+            il.Emit(OpCodes.Call, stringEquals);                    // Compare
+            il.Emit(OpCodes.Brtrue, resultLabel);                   // This is the end
+
             // Compare field ids, if it not equals then skip read
             il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
             il.Emit(OpCodes.Ldstr, field.Attribute.Id);             // Load field id 

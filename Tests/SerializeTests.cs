@@ -473,18 +473,39 @@ namespace Tests
       Assert.AreEqual(list[1], result[1]);
     }
 
+
+    [BinType("ListRefTestType")]
+    public class ListRefTestType
+    {
+      [BinField("o")]
+      public string One;
+
+      [BinField("Z")]
+      public string Two;
+
+      [BinField("g")]
+      public int Three;
+    }
+
     [TestMethod]
     [SecurityCritical]
     public void ListRefSerializeTest()
     {
-      var listlist = new List<List<string>>();
-      var list = new List<string>();
+      var list = new List<ListRefTestType>();
 
-      listlist.Add(list);
-      listlist.Add(list);
+      list.Add(new ListRefTestType { One = "One", Two = null, Three = 3 });
+      list.Add(new ListRefTestType { One = "Four", Two = null, Three = 6 });
 
-      var result = SerializeDeserialize(listlist);
-      Assert.IsTrue(ReferenceEquals(result[0], result[1]));
+      var result = SerializeDeserialize(list);
+
+      Assert.AreEqual(list.Count, result.Count);
+
+      for (int i = 0; i < list.Count; i++)
+      {
+        Assert.AreEqual(list[i].One, result[i].One);
+        Assert.AreEqual(list[i].Two, result[i].Two);
+        Assert.AreEqual(list[i].Three, result[i].Three);
+      }
     }
 
     [TestMethod]
