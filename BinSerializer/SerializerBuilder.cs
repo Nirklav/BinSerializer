@@ -47,12 +47,25 @@ namespace ThirtyNineEighty.BinarySerializer
     private static void GenerateObjectWriter(ILGenerator il, Type type)
     {
       var getRefId = typeof(RefWriterWatcher).GetMethod("GetRefId", BindingFlags.Public | BindingFlags.Static);
+      var onSerializing = typeof(IBinSerializable).GetMethod(nameof(IBinSerializable.OnSerializing));
 
       il.DeclareLocal(typeof(bool));
+      il.DeclareLocal(typeof(SerializationInfo));
 
       var skipTypeLabel = il.DefineLabel();
 
       BSDebug.TraceStart(il, "Write " + type.Name);
+
+      // Invoke deserialzation callback
+      if (typeof(IBinSerializable).IsAssignableFrom(type))
+      {
+        il.Emit(OpCodes.Ldloca_S, (byte)1);       // Load result local address
+        il.Emit(OpCodes.Initobj, typeof(SerializationInfo));
+
+        il.Emit(OpCodes.Ldarg_1);                 // Load serializing object
+        il.Emit(OpCodes.Ldloc_1);                 // Load created SerializationInfo
+        il.Emit(OpCodes.Callvirt, onSerializing); // Call onSerializing
+      }
 
       // Write type
       il.Emit(OpCodes.Ldarg_0);
@@ -278,11 +291,13 @@ namespace ThirtyNineEighty.BinarySerializer
       var getUninitializedObject = typeof(FormatterServices).GetMethod("GetUninitializedObject", BindingFlags.Public | BindingFlags.Static);
       var dynamicObjectRead = typeof(DynamicObjectReader<>).MakeGenericType(type).GetMethod("Read", BindingFlags.Public | BindingFlags.Static);
       var stringEquals = typeof(string).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string), typeof(string), typeof(StringComparison) }, null);
+      var onDeserialized = typeof(IBinSerializable).GetMethod(nameof(IBinSerializable.OnDeserialized));
 
-      il.DeclareLocal(typeof(int));    // ref if
-      il.DeclareLocal(type);           // readed object
-      il.DeclareLocal(typeof(string)); // last readed field id
-      il.DeclareLocal(typeof(int));    // readed object version
+      il.DeclareLocal(typeof(int));                 // ref if
+      il.DeclareLocal(type);                        // readed object
+      il.DeclareLocal(typeof(string));              // last readed field id
+      il.DeclareLocal(typeof(int));                 // readed object version
+      il.DeclareLocal(typeof(DeserializationInfo)); // info
 
       var resultLabel = il.DefineLabel();
       var readFastLabel = il.DefineLabel();
@@ -460,9 +475,23 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamSkiper(typeof(string)));
         }
       }
+      
+      // Return result and invoke callback
+      il.MarkLabel(resultLabel);
+
+      // Invoke deserialzation callback
+      if (typeof(IBinSerializable).IsAssignableFrom(type))
+      {
+        il.Emit(OpCodes.Ldloca_S, (byte)4);        // Load result local address
+        il.Emit(OpCodes.Ldloc_3);                  // Load version
+        il.Emit(OpCodes.Call, typeof(DeserializationInfo).GetConstructor(new Type[] { typeof(int) }));
+
+        il.Emit(OpCodes.Ldloc_1);                  // Load deserialized object
+        il.Emit(OpCodes.Ldloc_S, (byte)4);         // Load created DeserialzationInfo
+        il.Emit(OpCodes.Callvirt, onDeserialized); // Call onDeserialized
+      }
 
       // Return result
-      il.MarkLabel(resultLabel);
       il.Emit(OpCodes.Ldloc_1);
 
       BSDebug.TraceEnd(il, "Read " + type.Name);

@@ -536,6 +536,100 @@ namespace Tests
       Assert.AreEqual(l4, tl4);
     }
 
+    [BinType("CallbacksTestType", Version = 42)]
+    public class CallbacksTestType : IBinSerializable
+    {
+      [BinField("f")] public int First;
+      [BinField("s")] public int Second;
+      public int FromFirstAndSecond;
+
+      [SecuritySafeCritical]
+      public void OnSerializing(SerializationInfo info)
+      {
+        Second = First;
+      }
+
+      [SecuritySafeCritical]
+      public void OnDeserialized(DeserializationInfo info)
+      {
+        if (info.Version == 42)
+        {
+          FromFirstAndSecond = First * Second;
+        }
+      }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void CallbacksTest()
+    {
+      var instance = new CallbacksTestType();
+      instance.First = 10;
+
+      var result = SerializeDeserialize(instance);
+
+      Assert.AreEqual(result.First, 10);
+      Assert.AreEqual(result.Second, 10);
+      Assert.AreEqual(result.FromFirstAndSecond, 100);
+    }
+
+    public class CallbacksTestManualType : IBinSerializable
+    {
+      public int First;
+      public int Second;
+      public int FromFirstAndSecond;
+
+      [SecuritySafeCritical]
+      public void OnSerializing(SerializationInfo info)
+      {
+        Second = First;
+      }
+
+      [SecuritySafeCritical]
+      public void OnDeserialized(DeserializationInfo info)
+      {
+        if (info.Version == 42)
+        {
+          FromFirstAndSecond = First * Second;
+        }
+      }
+
+      public static void Write(Stream stream, CallbacksTestManualType instance)
+      {
+        stream.Write(instance.First);
+        stream.Write(instance.Second);
+        stream.Write(instance.FromFirstAndSecond);
+      }
+
+      public static CallbacksTestManualType Read(Stream stream, CallbacksTestManualType instance, int version)
+      {
+        instance.First = stream.ReadInt32();
+        instance.Second = stream.ReadInt32();
+        instance.FromFirstAndSecond = stream.ReadInt32();
+        return instance;
+      }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void CallbacksManualTest()
+    {
+      SerializerTypes.AddType(
+        new BinTypeDescription(typeof(CallbacksTestManualType), "CallbacksTestManualType")
+        , new BinTypeVersion(42, 0)
+        , BinTypeProcess.Create<CallbacksTestManualType>(CallbacksTestManualType.Write, CallbacksTestManualType.Read)
+      );
+
+      var instance = new CallbacksTestManualType();
+      instance.First = 10;
+
+      var result = SerializeDeserialize(instance);
+
+      Assert.AreEqual(result.First, 10);
+      Assert.AreEqual(result.Second, 10);
+      Assert.AreEqual(result.FromFirstAndSecond, 100);
+    }
+
     [TestMethod]
     [SecurityCritical]
     public void TestManual()

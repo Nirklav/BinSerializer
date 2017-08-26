@@ -48,6 +48,7 @@
     <Compile Include="BinSerializer.cs" />
     <Compile Include="BSDebug.cs" />
     <Compile Include="BinFieldAttribute.cs" />
+    <Compile Include="IBinSerializable.cs" />
     <Compile Include="MethodAdapter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RefReaderWatcher.cs" />
