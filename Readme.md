@@ -26,31 +26,6 @@ You can also serialize and deserialize as base type:
     var output = (SomeType)BinSerializer.Deserialize<object>(stream);
 ```
 
-### PerfTest result:
-This is a console output from PerfTest project:
-```
-Bin: 3667ms
-Formatter: 7523ms
-Bin: 3505ms
-Formatter: 7372ms
-Bin: 3450ms
-Formatter: 7327ms
-Bin: 3453ms
-Formatter: 7347ms
-Bin: 3446ms
-Formatter: 7356ms
-Bin: 3448ms
-Formatter: 7318ms
-Bin: 3450ms
-Formatter: 7356ms
-Bin: 3454ms
-Formatter: 7332ms
-Bin: 3454ms
-Formatter: 7355ms
-Bin: 3448ms
-Formatter: 7379ms
-```
-
 ### Type definition:
 ``` C#
     [BinType("SimpleType")]
@@ -84,7 +59,9 @@ With generics:
 ```
 
 With version:
+
 Version should be increased when fields added or removed from type.
+
 And with callbacks you always can process old data manually.
 ``` C#
     [BinType("Example", Version = 42)]
@@ -171,6 +148,31 @@ With generics:
       instance.FieldTwo = BinSerializer.Deserialize<T2>(stream);
       return instance;
     }
+```
+
+### PerfTest result:
+This is a console output from PerfTest project:
+```
+Bin: 3667ms
+Formatter: 7523ms
+Bin: 3505ms
+Formatter: 7372ms
+Bin: 3450ms
+Formatter: 7327ms
+Bin: 3453ms
+Formatter: 7347ms
+Bin: 3446ms
+Formatter: 7356ms
+Bin: 3448ms
+Formatter: 7318ms
+Bin: 3450ms
+Formatter: 7356ms
+Bin: 3454ms
+Formatter: 7332ms
+Bin: 3454ms
+Formatter: 7355ms
+Bin: 3448ms
+Formatter: 7379ms
 ```
 
 ### Serialization format:
