@@ -83,6 +83,31 @@ With generics:
     }
 ```
 
+With version:
+Version should be increased when fields added or removed from type.
+And with callbacks you always can process old data manually.
+``` C#
+    [BinType("Example", Version = 42)]
+    public class Example : IBinSerializable
+    {
+      [BinField("f")] public int First;
+      [BinField("s")] public int Second;
+
+      public void OnSerializing(SerializationInfo info)
+      {
+        // ...
+      }
+
+      public void OnDeserialized(DeserializationInfo info)
+      {
+        if (info.Version == 42)
+        {
+          // ...
+        }
+      }
+    }
+```
+
 #### Manual:
 ``` C#
     public void Register()
