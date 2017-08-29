@@ -45,6 +45,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinField.cs" />
     <Compile Include="BinSerializer.cs" />
     <Compile Include="BSDebug.cs" />
     <Compile Include="BinFieldAttribute.cs" />

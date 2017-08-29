@@ -3,7 +3,7 @@ using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+  [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
   public sealed class BinFieldAttribute : Attribute
   {
     public string Id { get; private set; }

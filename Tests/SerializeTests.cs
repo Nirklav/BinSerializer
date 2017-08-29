@@ -332,7 +332,6 @@ namespace Tests
       Assert.AreEqual(input2.FieldTwo, output2.FieldTwo);
     }
 
-    [BinType("InheritorBaseType")]
     class InheritorBaseType
     {
       [BinField("0")]
@@ -341,7 +340,6 @@ namespace Tests
       public long Zero { get { return _zero; } set { _zero = value; } }
     }
 
-    [BinType("Inheritor2BaseType")]
     class Inheritor2BaseType : InheritorBaseType
     {
       [BinField("a")]
@@ -379,6 +377,70 @@ namespace Tests
     public void InheritanceTest()
     {
       var input = new InheritorType();
+      input.Zero = -1; // kek
+      input.One = "1";
+      input.Two = "2";
+      input.Three = "3";
+      input.Four = "4";
+      input.Five = "5";
+      input.Six = 6;
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.Zero, output.Zero);
+      Assert.AreEqual(input.One, output.One);
+      Assert.AreEqual(input.Two, output.Two);
+      Assert.AreEqual(input.Three, output.Three);
+      Assert.AreEqual(input.Four, output.Four);
+      Assert.AreEqual(input.Five, output.Five);
+      Assert.AreEqual(input.Six, output.Six);
+    }
+
+    class InheritorPropertyBaseType
+    {
+      [BinField("0")]
+      private long _zero { get; set; }
+
+      public long Zero { get { return _zero; } set { _zero = value; } }
+    }
+
+    class InheritorProperty2BaseType : InheritorPropertyBaseType
+    {
+      [BinField("a")]
+      private string _one { get; set; }
+
+      [BinField("b")]
+      private string _two { get; set; }
+
+      [BinField("c")]
+      protected string _three { get; private set; }
+
+      public string Three { get { return _three; } set { _three = value; } }
+      public string One { get { return _one; } set { _one = value; } }
+      public string Two { get { return _two; } set { _two = value; } }
+    }
+
+    [BinType("InheritorPropertyType")]
+    class InheritorPropertyType : InheritorProperty2BaseType
+    {
+      [BinField("d")]
+      private string _four { get; set; }
+
+      [BinField("g")]
+      private string _five { get; set; }
+
+      [BinField("h")]
+      public int Six { get; set; }
+
+      public string Four { get { return _four; } set { _four = value; } }
+      public string Five { get { return _five; } set { _five = value; } }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void InheritancePropertyTest()
+    {
+      var input = new InheritorPropertyType();
       input.Zero = -1; // kek
       input.One = "1";
       input.Two = "2";

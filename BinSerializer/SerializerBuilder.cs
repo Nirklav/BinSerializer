@@ -104,32 +104,32 @@ namespace ThirtyNineEighty.BinarySerializer
       }
       else
       {
-        foreach (var field in GetFields(type))
+        foreach (var binField in BinField.Get(type))
         {
           var skipFieldLabel = il.DefineLabel();
 
           // If field is null then skip it
-          if (!field.Info.FieldType.IsValueType)
+          if (!binField.IsValueType)
           {
             il.Emit(OpCodes.Ldarg_1);                 // Load object
-            il.Emit(OpCodes.Ldfld, field.Info);       // Read field form object
+            binField.EmitRead(il);                    // Read field form object
             il.Emit(OpCodes.Brfalse, skipFieldLabel); // Skip if field is null
           }
 
           // Write field id
-          il.Emit(OpCodes.Ldarg_0);                   // Load stream
-          il.Emit(OpCodes.Ldstr, field.Attribute.Id); // Load field id
+          il.Emit(OpCodes.Ldarg_0);             // Load stream
+          il.Emit(OpCodes.Ldstr, binField.Id);  // Load field id
           il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
           var serialize = typeof(BinSerializer<>)
-            .MakeGenericType(field.Info.FieldType)
+            .MakeGenericType(binField.Type)
             .GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
 
           // Write field
-          il.Emit(OpCodes.Ldarg_0);           // Load stream
-          il.Emit(OpCodes.Ldarg_1);           // Load object
-          il.Emit(OpCodes.Ldfld, field.Info); // Read field from object
-          il.Emit(OpCodes.Call, serialize);   // Write field value
+          il.Emit(OpCodes.Ldarg_0);         // Load stream
+          il.Emit(OpCodes.Ldarg_1);         // Load object      
+          binField.EmitRead(il);            // Read field from object
+          il.Emit(OpCodes.Call, serialize); // Write field value
 
           // Skip field label
           il.MarkLabel(skipFieldLabel);
@@ -416,7 +416,7 @@ namespace ThirtyNineEighty.BinarySerializer
           // Read fields
           Label? nextFieldLabel = null;
 
-          foreach (var field in GetFields(type))
+          foreach (var binField in BinField.Get(type))
           {
             var markCurrent = nextFieldLabel != null;
             if (nextFieldLabel == null)
@@ -443,13 +443,13 @@ namespace ThirtyNineEighty.BinarySerializer
 
             // Compare field ids, if it not equals then skip read
             il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
-            il.Emit(OpCodes.Ldstr, field.Attribute.Id);             // Load field id 
+            il.Emit(OpCodes.Ldstr, binField.Id);                    // Load field id 
             il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
             il.Emit(OpCodes.Call, stringEquals);                    // Compare
             il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);         // These aren't the field your looking for
 
             var deserialize = typeof(BinSerializer<>)
-              .MakeGenericType(field.Info.FieldType)
+              .MakeGenericType(binField.Type)
               .GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
 
             // Prepeare stack to field set
@@ -463,7 +463,7 @@ namespace ThirtyNineEighty.BinarySerializer
             il.Emit(OpCodes.Call, deserialize);
 
             // Set field
-            il.Emit(OpCodes.Stfld, field.Info);
+            binField.EmitWrite(il);
           }
 
           // Mark jump (for last field)
@@ -597,7 +597,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static class DynamicObjectReader<T>
     {
       private static readonly Type Type = typeof(T);
-      private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(typeof(T));
+      private static readonly Dictionary<string, BinField> FieldsMap = GetFieldsMap(typeof(T));
 
       [SecurityCritical]
       static DynamicObjectReader()
@@ -619,69 +619,20 @@ namespace ThirtyNineEighty.BinarySerializer
           if (token == SerializerTypes.TypeEndToken)
             break;
 
-          FieldInfo field;
-          if (!FieldsMap.TryGetValue(token, out field))
+          if (!FieldsMap.TryGetValue(token, out BinField binField))
             continue;
 
-          field.SetValue(boxedInstance, BinSerializer<object>.Deserialize(stream));
+          var value = BinSerializer<object>.Deserialize(stream);
+          binField.SetValue(boxedInstance, value);
         }
 
         return (T)boxedInstance;
       }
 
       [SecurityCritical]
-      private static Dictionary<string, FieldInfo> GetFieldsMap(Type type)
+      private static Dictionary<string, BinField> GetFieldsMap(Type type)
       {
-        return GetFields(type).ToDictionary(f => f.Attribute.Id, f => f.Info);
-      }
-    }
-    #endregion
-
-    #region get fields
-    private struct Field
-    {
-      public readonly BinFieldAttribute Attribute;
-      public readonly FieldInfo Info;
-
-      public Field(BinFieldAttribute attribute, FieldInfo fieldInfo)
-      {
-        Attribute = attribute;
-        Info = fieldInfo;
-      }
-    }
-
-    [SecurityCritical]
-    private static IEnumerable<Field> GetFields(Type type)
-    {
-      var fields = type
-        .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-        .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
-        .Where(f => f.Attribute != null);
-
-      Type currentType = type;
-      while (true)
-      {
-        currentType = currentType.BaseType;
-        if (currentType == typeof(object))
-          break;
-
-        var baseTypePrivateFields = currentType
-          .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-          .Where(f => !f.IsFamily)
-          .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
-          .Where(f => f.Attribute != null);
-
-        fields = fields.Concat(baseTypePrivateFields);
-      }
-
-      var declaredIds = new HashSet<string>();
-      foreach (var field in fields.OrderBy(p => p.Attribute.Id))
-      {
-        if (!declaredIds.Add(field.Attribute.Id))
-          throw new ArgumentException(string.Format("Field \"{0}\" declared twice in {1} type", field.Attribute.Id, field.Info.DeclaringType));
-        if (field.Info.IsInitOnly)
-          throw new ArgumentException(string.Format("Field {0} can't be readonly (IsInitOnly = true). For type {1}", field.Info.Name, field.Info.DeclaringType));
-        yield return field;
+        return BinField.Get(type).ToDictionary(f => f.Id, f => f);
       }
     }
     #endregion
