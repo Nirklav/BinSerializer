@@ -23,9 +23,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     // Runtime cache
     private static readonly ConcurrentDictionary<string, Type> TypeIdToTypeCache = new ConcurrentDictionary<string, Type>();
     private static readonly ConcurrentDictionary<Type, string> TypeToTypeIdCache = new ConcurrentDictionary<Type, string>();
-
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeWritersCache = new ConcurrentDictionary<Type, MethodInfo>();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> TypeToTypeReadersCache = new ConcurrentDictionary<Type, MethodInfo>();
  
     #region initialization
     [SecuritySafeCritical]
@@ -359,20 +356,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       Locker.EnterReadLock();
       try
       {
-        // Try get from cache
-        MethodInfo writer;
-        if (TypeToTypeWritersCache.TryGetValue(type, out writer))
-          return writer;
-
-        // Build
         var info = GetTypeInfo(type);
-        writer = info.GetTypeWriter(type);
-
-        // Add to cache
-        TypeToTypeWritersCache.TryAdd(type, writer);
-
-        // Result
-        return writer;
+        return info.GetTypeWriter(type);
       }
       finally
       {
@@ -386,20 +371,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       Locker.EnterReadLock();
       try
       {
-        // Try get from cache
-        MethodInfo reader;
-        if (TypeToTypeReadersCache.TryGetValue(type, out reader))
-          return reader;
-
-        // Build
         var info = GetTypeInfo(type);
-        reader = info.GetTypeReader(type);
-
-        // Add to cache
-        TypeToTypeReadersCache.TryAdd(type, reader);
-
-        // Result
-        return reader;
+        return info.GetTypeReader(type);
       }
       finally
       {
