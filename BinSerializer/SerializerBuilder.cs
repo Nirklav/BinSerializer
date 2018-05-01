@@ -632,7 +632,19 @@ namespace ThirtyNineEighty.BinarySerializer
       [SecurityCritical]
       private static Dictionary<string, BinField> GetFieldsMap(Type type)
       {
-        return BinField.Get(type).ToDictionary(f => f.Id, f => f);
+        return BinField.Get(type).ToDictionary(GetFieldId, GetField);
+      }
+
+      [SecurityCritical]
+      private static string GetFieldId(BinField f)
+      {
+        return f.Id;
+      }
+
+      [SecurityCritical]
+      private static BinField GetField(BinField f)
+      {
+        return f;
       }
     }
     #endregion
