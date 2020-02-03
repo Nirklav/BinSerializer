@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Security;
 using System.Threading;
+#if NETSTANDARD
+using Microsoft.DotNet.PlatformAbstractions;
+using Microsoft.Extensions.DependencyModel;
+#endif
 
 namespace ThirtyNineEighty.BinarySerializer.Types
 {
@@ -123,8 +127,14 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     private static void AddUserDefinedTypes()
     {
+#if NETSTANDARD2_0
+      var runtimeId = RuntimeEnvironment.GetRuntimeIdentifier();
+      foreach (var assemblyName in DependencyContext.Default.GetRuntimeAssemblyNames(runtimeId))
+        AddTypesFrom(Assembly.Load(assemblyName));
+#elif NET45
       foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         AddTypesFrom(assembly);
+#endif
     }
 
     [SecurityCritical]

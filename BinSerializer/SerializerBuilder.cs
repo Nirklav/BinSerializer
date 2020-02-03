@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Security;
 using ThirtyNineEighty.BinarySerializer.Types;
 
@@ -302,10 +303,10 @@ namespace ThirtyNineEighty.BinarySerializer
         .GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
 
       var defaultCtor = type.TypeInfo.GetConstructor(Type.EmptyTypes);
-
+      
       var getUninitializedObject = typeof(RuntimeHelpers)
         .GetTypeInfo()
-        .GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
+        .GetMethod(nameof(FormatterServices.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
 
       var dynamicObjectRead = typeof(DynamicObjectReader<>)
         .MakeGenericType(type.Type)
