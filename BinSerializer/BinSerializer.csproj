@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/Nirklav/BinSerializer</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Serializer BinarySerializer</PackageTags>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -27,11 +27,11 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+  <ItemGroup>
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.3" />
+    <PackageReference Include="System.Security.Permissions" Version="4.0.1.0" />
   </ItemGroup>
 
 </Project>

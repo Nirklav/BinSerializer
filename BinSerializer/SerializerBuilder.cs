@@ -10,10 +10,6 @@ using System.Runtime.Serialization;
 using System.Security;
 using ThirtyNineEighty.BinarySerializer.Types;
 
-#if NET45
-using System.Runtime.Serialization;
-#endif
-
 namespace ThirtyNineEighty.BinarySerializer
 {
   delegate void Writer<in T>(Stream stream, T obj);
