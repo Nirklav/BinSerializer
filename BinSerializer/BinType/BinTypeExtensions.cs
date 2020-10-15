@@ -1,32 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+
 using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  enum TypeExtensionKind
-  {
-    Write,
-    Read
-  }
-
-  [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-  class BinTypeExtensionAttribute : Attribute
-  {
-    public string Name { get; private set; }
-    public Type Type { get; private set; }
-    public TypeExtensionKind Kind { get; private set; }
-
-    public BinTypeExtensionAttribute(string name, Type type, TypeExtensionKind kind)
-    {
-      Name = name;
-      Type = type;
-      Kind = kind;
-    }
-  }
-
-  static class BinTypeExtensions
+    static class BinTypeExtensions
   {
     [BinTypeExtension(SerializerTypes.DictionaryToken, typeof(Dictionary<,>), TypeExtensionKind.Write)]
     public static void WriteDictionary<TKey, TValue>(Stream stream, Dictionary<TKey, TValue> value)

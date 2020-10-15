@@ -1,93 +1,117 @@
 ﻿using System.IO;
 using System.Security;
 using System.Security.Permissions;
+
 using ThirtyNineEighty.BinarySerializer.Types;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  [SecuritySafeCritical]
-  public static class BinSerializer
-  {
+    /// <summary>
+    /// Binary Serializer
+    /// </summary>
     [SecuritySafeCritical]
-    [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
-    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
-    public static void Serialize<T>(Stream stream, T obj)
+    public static class BinSerializer
     {
-      BinSerializer<T>.Serialize(stream, obj);
-    }
-
-    [SecuritySafeCritical]
-    [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
-    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
-    public static T Deserialize<T>(Stream stream)
-    {
-      return BinSerializer<T>.Deserialize(stream);
-    }
-  }
-
-  [SecuritySafeCritical]
-  static class BinSerializer<T>
-  {
-    private static readonly Writer<T> CachedWriter;
-    private static readonly Reader<T> CachedReader;
-
-    [SecuritySafeCritical]
-    static BinSerializer()
-    {
-      CachedWriter = GetWriterInvoker();
-      CachedReader = GetReaderInvoker();
-    }
-
-    [SecurityCritical]
-    private static Writer<T> GetWriterInvoker()
-    {
-      return typeof(T).IsValueType || typeof(T).IsSealed
-        ? SerializerBuilder.CreateWriter<T>(typeof(T))
-        : null;
-    }
-
-    [SecurityCritical]
-    private static Reader<T> GetReaderInvoker()
-    {
-      return typeof(T).IsValueType || typeof(T).IsSealed
-        ? SerializerBuilder.CreateReader<T>(typeof(T))
-        : null;
-    }
-
-    [SecuritySafeCritical]
-    public static void Serialize(Stream stream, T obj)
-    {
-      using (new RefWriterWatcher(true))
-      {
-        if (CachedWriter != null)
-          CachedWriter(stream, obj);
-        else
+        /// <summary>
+        /// Serialize
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream"></param>
+        /// <param name="obj"></param>
+        [SecuritySafeCritical]
+#if !NET50
+        [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
+        [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
+#endif
+        
+        public static void Serialize<T>(Stream stream, T obj)
         {
-          var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
-          var writer = SerializerBuilder.CreateWriter<T>(type);
-          writer(stream, obj);
+            BinSerializer<T>.Serialize(stream, obj);
         }
-      }
+        /// <summary>
+        /// Deserialize
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        [SecuritySafeCritical]
+#if !NET50
+        [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
+        [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
+#endif
+        public static T Deserialize<T>(Stream stream)
+        {
+            return BinSerializer<T>.Deserialize(stream);
+        }
     }
+    /// <summary>
+    /// Binary Serializer
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
 
     [SecuritySafeCritical]
-    public static T Deserialize(Stream stream)
+    static class BinSerializer<T>
     {
-      using (new RefReaderWatcher(true))
-      {
-        BSDebug.TraceStart("Start read of ...");
+        private static readonly Writer<T> CachedWriter;
+        private static readonly Reader<T> CachedReader;
 
-        var typeId = stream.ReadString();   
+        [SecuritySafeCritical]
+        static BinSerializer()
+        {
+            CachedWriter = GetWriterInvoker();
+            CachedReader = GetReaderInvoker();
+        }
 
-        BSDebug.TraceStart("... " + typeId);
+        [SecurityCritical]
+        private static Writer<T> GetWriterInvoker()
+        {
+            return typeof(T).IsValueType || typeof(T).IsSealed
+              ? SerializerBuilder.CreateWriter<T>(typeof(T))
+              : null;
+        }
 
-        if (CachedReader != null)
-          return CachedReader(stream);
+        [SecurityCritical]
+        private static Reader<T> GetReaderInvoker()
+        {
+            return typeof(T).IsValueType || typeof(T).IsSealed
+              ? SerializerBuilder.CreateReader<T>(typeof(T))
+              : null;
+        }
 
-        var type = SerializerTypes.GetType(typeId);
-        var reader = SerializerBuilder.CreateReader<T>(type);
-        return reader(stream);
-      }
+        [SecuritySafeCritical]
+        public static void Serialize(Stream stream, T obj)
+        {
+            using (new RefWriterWatcher(true))
+            {
+                if (CachedWriter != null)
+                    CachedWriter(stream, obj);
+                else
+                {
+                    var type = ReferenceEquals(obj, null) ? typeof(T) : obj.GetType();
+                    var writer = SerializerBuilder.CreateWriter<T>(type);
+                    writer(stream, obj);
+                }
+            }
+        }
+
+        [SecuritySafeCritical]
+        public static T Deserialize(Stream stream)
+        {
+            using (new RefReaderWatcher(true))
+            {
+                BSDebug.TraceStart("Start read of ...");
+
+                var typeId = stream.ReadString();
+
+                BSDebug.TraceStart("... " + typeId);
+
+                if (CachedReader != null)
+                    return CachedReader(stream);
+
+                var type = SerializerTypes.GetType(typeId);
+                var reader = SerializerBuilder.CreateReader<T>(type);
+                return reader(stream);
+            }
+        }
     }
-  }
 }

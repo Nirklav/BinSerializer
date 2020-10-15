@@ -2,18 +2,31 @@
 
 namespace ThirtyNineEighty.BinarySerializer.Types
 {
-  public sealed class BinTypeVersion
-  {
-    public readonly int Version;
-    public readonly int MinSipportedVersion;
-
-    public BinTypeVersion(int version, int minSupportedVesrion)
+    /// <summary>
+    /// BinTypeVersion
+    /// </summary>
+    public sealed class BinTypeVersion
     {
-      if (version < minSupportedVesrion)
-        throw new ArgumentException("version < minSupportedVesrion");
+        /// <summary>
+        /// Version
+        /// </summary>
+        public readonly int Version;
+        /// <summary>
+        /// MinSipportedVersion
+        /// </summary>
+        public readonly int MinSipportedVersion;
+        /// <summary>
+        /// BinTypeVersion
+        /// </summary>
+        /// <param name="version"></param>
+        /// <param name="minSupportedVesrion"></param>
+        public BinTypeVersion(int version, int minSupportedVesrion)
+        {
+            if (version < minSupportedVesrion)
+                throw new ArgumentException("version < minSupportedVesrion");
 
-      Version = version;
-      MinSipportedVersion = minSupportedVesrion;
+            Version = version;
+            MinSipportedVersion = minSupportedVesrion;
+        }
     }
-  }
 }

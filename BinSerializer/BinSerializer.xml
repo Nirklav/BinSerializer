@@ -1,0 +1,476 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BinSerializer</name>
+    </assembly>
+    <members>
+        <member name="T:ThirtyNineEighty.BinarySerializer.BinFieldAttribute">
+             <summary>
+            Binary Field
+             </summary>
+        </member>
+        <member name="P:ThirtyNineEighty.BinarySerializer.BinFieldAttribute.Id">
+            <summary>
+            Id
+            </summary>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinFieldAttribute.#ctor(System.String)">
+            <summary>
+            Binary Field
+            </summary>
+            <param name="id"></param>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.BinSerializer">
+            <summary>
+            Binary Serializer
+            </summary>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinSerializer.Serialize``1(System.IO.Stream,``0)">
+            <summary>
+            Serialize
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinSerializer.Deserialize``1(System.IO.Stream)">
+            <summary>
+            Deserialize
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.BinSerializer`1">
+            <summary>
+            Binary Serializer
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.BinStreamExtensions">
+            <summary>
+            BinStreamExtensions
+            </summary>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Boolean)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Byte)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.SByte)">
+            <summary>
+            Write object
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Int16)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.UInt16)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Char)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Int32)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.UInt32)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Int64)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.UInt64)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Single)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Double)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.Decimal)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.String)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.Write(System.IO.Stream,System.DateTime)">
+            <summary>
+            Write
+            </summary>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadBoolean(System.IO.Stream)">
+            <summary>
+            ReadBoolean
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadByte(System.IO.Stream)">
+            <summary>
+            ReadByte
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadSByte(System.IO.Stream)">
+            <summary>
+            ReadSByte
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadInt16(System.IO.Stream)">
+            <summary>
+            ReadInt16
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadUInt16(System.IO.Stream)">
+            <summary>
+            ReadUInt16
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadChar(System.IO.Stream)">
+            <summary>
+            ReadChar
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadInt32(System.IO.Stream)">
+            <summary>
+            ReadInt32
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadUInt32(System.IO.Stream)">
+            <summary>
+            ReadUInt32
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadInt64(System.IO.Stream)">
+            <summary>
+            ReadInt64
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadUInt64(System.IO.Stream)">
+            <summary>
+            ReadUInt64
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadSingle(System.IO.Stream)">
+            <summary>
+            ReadSingle
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadDouble(System.IO.Stream)">
+            <summary>
+            ReadDouble
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadDecimal(System.IO.Stream)">
+            <summary>
+            ReadDecimal
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadString(System.IO.Stream)">
+            <summary>
+            ReadString
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ReadDateTime(System.IO.Stream)">
+            <summary>
+            ReadDateTime
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipBoolean(System.IO.Stream)">
+            <summary>
+            SkipBoolean
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipByte(System.IO.Stream)">
+            <summary>
+            SkipByte
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipSByte(System.IO.Stream)">
+            <summary>
+            SkipSByte
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipInt16(System.IO.Stream)">
+            <summary>
+            SkipInt16
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipUInt16(System.IO.Stream)">
+            <summary>
+            SkipUInt16
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipChar(System.IO.Stream)">
+            <summary>
+            SkipChar
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipInt32(System.IO.Stream)">
+            <summary>
+            SkipInt32
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipUInt32(System.IO.Stream)">
+            <summary>
+            SkipUInt32
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipInt64(System.IO.Stream)">
+            <summary>
+            SkipInt64
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipUInt64(System.IO.Stream)">
+            <summary>
+            SkipUInt64
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipSingle(System.IO.Stream)">
+            <summary>
+            SkipSingle
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipDouble(System.IO.Stream)">
+            <summary>
+            SkipDouble
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipDecimal(System.IO.Stream)">
+            <summary>
+            SkipDecimal
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipString(System.IO.Stream)">
+            <summary>
+            SkipString
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.SkipDateTime(System.IO.Stream)">
+            <summary>
+            SkipDateTime
+            </summary>
+            <param name="stream"></param>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ToInt(System.Single)">
+            <summary>
+            ToInt
+            </summary>
+            <param name="f"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ToLong(System.Double)">
+            <summary>
+            ToLong
+            </summary>
+            <param name="f"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ToSingle(System.Int32)">
+            <summary>
+            ToSingle
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.BinStreamExtensions.ToDouble(System.Int64)">
+            <summary>
+            ToDouble
+            </summary>
+            <param name="i"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.Types.BinWriter`1">
+            <summary>
+            BinWriter
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="stream"></param>
+            <param name="obj"></param>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.Types.BinReader`1">
+            <summary>
+            BinReader
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="stream"></param>
+            <param name="obj"></param>
+            <param name="version"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.Types.BinTypeProcess">
+            <summary>
+            BinTypeProcess
+            </summary>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.Types.BinTypeProcess.Create``1(ThirtyNineEighty.BinarySerializer.Types.BinWriter{``0},ThirtyNineEighty.BinarySerializer.Types.BinReader{``0})">
+            <summary>
+            Create
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="writer"></param>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.Types.BinTypeProcess.Create(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+            <summary>
+            Create
+            </summary>
+            <param name="writer"></param>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.Types.BinTypeVersion">
+            <summary>
+            BinTypeVersion
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.BinTypeVersion.Version">
+            <summary>
+            Version
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.BinTypeVersion.MinSipportedVersion">
+            <summary>
+            MinSipportedVersion
+            </summary>
+        </member>
+        <member name="M:ThirtyNineEighty.BinarySerializer.Types.BinTypeVersion.#ctor(System.Int32,System.Int32)">
+            <summary>
+            BinTypeVersion
+            </summary>
+            <param name="version"></param>
+            <param name="minSupportedVesrion"></param>
+        </member>
+        <member name="T:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes">
+            <summary>
+            SerializerTypes
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes.NullToken">
+            <summary>
+            NullToken
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes.TypeEndToken">
+            <summary>
+            TypeEndToken
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes.ArrayToken">
+            <summary>
+            ArrayToken
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes.DictionaryToken">
+            <summary>
+            DictionaryToken
+            </summary>
+        </member>
+        <member name="F:ThirtyNineEighty.BinarySerializer.Types.SerializerTypes.ListToken">
+            <summary>
+            ListToken
+            </summary>
+        </member>
+    </members>
+</doc>

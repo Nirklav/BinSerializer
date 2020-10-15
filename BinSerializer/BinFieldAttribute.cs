@@ -3,18 +3,27 @@ using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
 {
-  [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
-  public sealed class BinFieldAttribute : Attribute
-  {
-    public string Id { get; private set; }
-
-    [SecuritySafeCritical]
-    public BinFieldAttribute(string id)
+    /// <summary>
+    ///Binary Field
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
+    public sealed class BinFieldAttribute : Attribute
     {
-      if (string.IsNullOrEmpty(id))
-        throw new ArgumentException("Id must have value.");
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; private set; }
+        /// <summary>
+        /// Binary Field
+        /// </summary>
+        /// <param name="id"></param>
+        [SecuritySafeCritical]
+        public BinFieldAttribute(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                throw new ArgumentException("Id must have value.");
 
-      Id = id;
+            Id = id;
+        }
     }
-  }
 }
