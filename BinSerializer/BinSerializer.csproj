@@ -3,6 +3,8 @@
 	<PropertyGroup>
 		<TargetFrameworks>netcoreapp3.1;net45;net452;net462;netstandard2.1;net50</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
 		<AssemblyOriginatorKeyFile>BinSerializerStrongName.snk</AssemblyOriginatorKeyFile>
 		<PackageId>ThirtyNineEighty.BinarySerializer</PackageId>
 		<Authors>ThirtyNineEighty.BinarySerializer</Authors>
@@ -18,21 +20,16 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup>
-	  <DocumentationFile>D:\Users\WXF\Source\Repos\WitchieBinSerializer\BinSerializer\BinSerializer.xml</DocumentationFile>
+		<DocumentationFile>D:\Users\WXF\Source\Repos\WitchieBinSerializer\BinSerializer\BinSerializer.xml</DocumentationFile>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.1|AnyCPU'">
-	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
-
 	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-	  <PackageReference Include="System.Security.Permissions">
-	    <Version>4.7.0</Version>
-	  </PackageReference>
+		<PackageReference Include="System.Security.Permissions">
+			<Version>4.7.0</Version>
+		</PackageReference>
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net50'">
 		<PackageReference Include="System.Security.Permissions">
@@ -40,14 +37,14 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-	  <PackageReference Include="System.Security.Permissions">
-	    <Version>4.7.0</Version>
-	  </PackageReference>
+		<PackageReference Include="System.Security.Permissions">
+			<Version>4.7.0</Version>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-	  <PackageReference Include="System.Security.Permissions">
-	    <Version>4.7.0</Version>
-	  </PackageReference>
+		<PackageReference Include="System.Security.Permissions">
+			<Version>4.7.0</Version>
+		</PackageReference>
 	</ItemGroup>
 </Project>
