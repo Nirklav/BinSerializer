@@ -6,12 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Security;
 using ThirtyNineEighty.BinarySerializer.Types;
-
-#if NET45
-using System.Runtime.Serialization;
-#endif
 
 namespace ThirtyNineEighty.BinarySerializer
 {
@@ -305,7 +302,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var getUninitializedObject = typeof(RuntimeHelpers)
         .GetTypeInfo()
-        .GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
+        .GetMethod(nameof(FormatterServices.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
 
       var dynamicObjectRead = typeof(DynamicObjectReader<>)
         .MakeGenericType(type.Type)

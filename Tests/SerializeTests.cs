@@ -540,12 +540,14 @@ namespace Tests
       public string FieldOne;
       public string FieldTwo;
 
+      [SecurityCritical]
       public static void Write(Stream stream, Manual instance)
       {
         stream.Write(instance.FieldOne);
         stream.Write(instance.FieldTwo);
       }
 
+      [SecurityCritical]
       public static Manual Read(Stream stream, Manual instance, int version)
       {
         instance.FieldOne = stream.ReadString();
@@ -583,12 +585,14 @@ namespace Tests
       public T2 FieldTwo;
     }
 
+    [SecurityCritical]
     public static void WriteManualGeneric<T1, T2>(Stream stream, ManualGenericType<T1, T2> instance)
     {
       BinSerializer.Serialize(stream, instance.FieldOne);
       BinSerializer.Serialize(stream, instance.FieldTwo);
     }
 
+    [SecurityCritical]
     public static ManualGenericType<T1, T2> ReadManualGeneric<T1, T2>(Stream stream, ManualGenericType<T1, T2> instance, int version)
     {
       instance.FieldOne = BinSerializer.Deserialize<T1>(stream);
@@ -596,6 +600,7 @@ namespace Tests
       return instance;
     }
 
+    [SecurityCritical]
     private static T SerializeDeserialize<T>(T input)
     {
       var stream = new MemoryStream();

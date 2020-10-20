@@ -1,9 +1,9 @@
 ﻿using System.IO;
-using System.Reflection;
 using System.Security;
+using System.Security.Permissions;
 using ThirtyNineEighty.BinarySerializer.Types;
 
-#if NET45
+#if !NETSTANDARD
 using System.Security.Permissions;
 #endif
 
@@ -13,20 +13,20 @@ namespace ThirtyNineEighty.BinarySerializer
   public static class BinSerializer
   {
     [SecuritySafeCritical]
-#if NET45
+#if !NETSTANDARD
     [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
-    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
 #endif
+    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
     public static void Serialize<T>(Stream stream, T obj)
     {
       BinSerializer<T>.Serialize(stream, obj);
     }
 
     [SecuritySafeCritical]
-#if NET45
+#if !NETSTANDARD
     [ReflectionPermission(SecurityAction.Assert, Unrestricted = true)]
-    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
 #endif
+    [SecurityPermission(SecurityAction.Assert, ControlEvidence = true)]
     public static T Deserialize<T>(Stream stream)
     {
       return BinSerializer<T>.Deserialize(stream);
