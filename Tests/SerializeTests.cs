@@ -332,7 +332,6 @@ namespace Tests
       Assert.AreEqual(input2.FieldTwo, output2.FieldTwo);
     }
 
-    [BinType("InheritorBaseType")]
     class InheritorBaseType
     {
       [BinField("0")]
@@ -341,7 +340,6 @@ namespace Tests
       public long Zero { get { return _zero; } set { _zero = value; } }
     }
 
-    [BinType("Inheritor2BaseType")]
     class Inheritor2BaseType : InheritorBaseType
     {
       [BinField("a")]
@@ -379,6 +377,70 @@ namespace Tests
     public void InheritanceTest()
     {
       var input = new InheritorType();
+      input.Zero = -1; // kek
+      input.One = "1";
+      input.Two = "2";
+      input.Three = "3";
+      input.Four = "4";
+      input.Five = "5";
+      input.Six = 6;
+
+      var output = SerializeDeserialize(input);
+
+      Assert.AreEqual(input.Zero, output.Zero);
+      Assert.AreEqual(input.One, output.One);
+      Assert.AreEqual(input.Two, output.Two);
+      Assert.AreEqual(input.Three, output.Three);
+      Assert.AreEqual(input.Four, output.Four);
+      Assert.AreEqual(input.Five, output.Five);
+      Assert.AreEqual(input.Six, output.Six);
+    }
+
+    class InheritorPropertyBaseType
+    {
+      [BinField("0")]
+      private long _zero { get; set; }
+
+      public long Zero { get { return _zero; } set { _zero = value; } }
+    }
+
+    class InheritorProperty2BaseType : InheritorPropertyBaseType
+    {
+      [BinField("a")]
+      private string _one { get; set; }
+
+      [BinField("b")]
+      private string _two { get; set; }
+
+      [BinField("c")]
+      protected string _three { get; private set; }
+
+      public string Three { get { return _three; } set { _three = value; } }
+      public string One { get { return _one; } set { _one = value; } }
+      public string Two { get { return _two; } set { _two = value; } }
+    }
+
+    [BinType("InheritorPropertyType")]
+    class InheritorPropertyType : InheritorProperty2BaseType
+    {
+      [BinField("d")]
+      private string _four { get; set; }
+
+      [BinField("g")]
+      private string _five { get; set; }
+
+      [BinField("h")]
+      public int Six { get; set; }
+
+      public string Four { get { return _four; } set { _four = value; } }
+      public string Five { get { return _five; } set { _five = value; } }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void InheritancePropertyTest()
+    {
+      var input = new InheritorPropertyType();
       input.Zero = -1; // kek
       input.One = "1";
       input.Two = "2";
@@ -473,18 +535,39 @@ namespace Tests
       Assert.AreEqual(list[1], result[1]);
     }
 
+
+    [BinType("ListRefTestType")]
+    public class ListRefTestType
+    {
+      [BinField("o")]
+      public string One;
+
+      [BinField("Z")]
+      public string Two;
+
+      [BinField("g")]
+      public int Three;
+    }
+
     [TestMethod]
     [SecurityCritical]
     public void ListRefSerializeTest()
     {
-      var listlist = new List<List<string>>();
-      var list = new List<string>();
+      var list = new List<ListRefTestType>();
 
-      listlist.Add(list);
-      listlist.Add(list);
+      list.Add(new ListRefTestType { One = "One", Two = null, Three = 3 });
+      list.Add(new ListRefTestType { One = "Four", Two = null, Three = 6 });
 
-      var result = SerializeDeserialize(listlist);
-      Assert.IsTrue(ReferenceEquals(result[0], result[1]));
+      var result = SerializeDeserialize(list);
+
+      Assert.AreEqual(list.Count, result.Count);
+
+      for (int i = 0; i < list.Count; i++)
+      {
+        Assert.AreEqual(list[i].One, result[i].One);
+        Assert.AreEqual(list[i].Two, result[i].Two);
+        Assert.AreEqual(list[i].Three, result[i].Three);
+      }
     }
 
     [TestMethod]
@@ -513,6 +596,100 @@ namespace Tests
       Assert.AreEqual(l2, tl2);
       Assert.AreEqual(l3, tl3);
       Assert.AreEqual(l4, tl4);
+    }
+
+    [BinType("CallbacksTestType", Version = 42)]
+    public class CallbacksTestType : IBinSerializable
+    {
+      [BinField("f")] public int First;
+      [BinField("s")] public int Second;
+      public int FromFirstAndSecond;
+
+      [SecuritySafeCritical]
+      public void OnSerializing(SerializationInfo info)
+      {
+        Second = First;
+      }
+
+      [SecuritySafeCritical]
+      public void OnDeserialized(DeserializationInfo info)
+      {
+        if (info.Version == 42)
+        {
+          FromFirstAndSecond = First * Second;
+        }
+      }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void CallbacksTest()
+    {
+      var instance = new CallbacksTestType();
+      instance.First = 10;
+
+      var result = SerializeDeserialize(instance);
+
+      Assert.AreEqual(result.First, 10);
+      Assert.AreEqual(result.Second, 10);
+      Assert.AreEqual(result.FromFirstAndSecond, 100);
+    }
+
+    public class CallbacksTestManualType : IBinSerializable
+    {
+      public int First;
+      public int Second;
+      public int FromFirstAndSecond;
+
+      [SecuritySafeCritical]
+      public void OnSerializing(SerializationInfo info)
+      {
+        Second = First;
+      }
+
+      [SecuritySafeCritical]
+      public void OnDeserialized(DeserializationInfo info)
+      {
+        if (info.Version == 42)
+        {
+          FromFirstAndSecond = First * Second;
+        }
+      }
+
+      public static void Write(Stream stream, CallbacksTestManualType instance)
+      {
+        stream.Write(instance.First);
+        stream.Write(instance.Second);
+        stream.Write(instance.FromFirstAndSecond);
+      }
+
+      public static CallbacksTestManualType Read(Stream stream, CallbacksTestManualType instance, int version)
+      {
+        instance.First = stream.ReadInt32();
+        instance.Second = stream.ReadInt32();
+        instance.FromFirstAndSecond = stream.ReadInt32();
+        return instance;
+      }
+    }
+
+    [TestMethod]
+    [SecurityCritical]
+    public void CallbacksManualTest()
+    {
+      SerializerTypes.AddType(
+        new BinTypeDescription(typeof(CallbacksTestManualType), "CallbacksTestManualType")
+        , new BinTypeVersion(42, 0)
+        , BinTypeProcess.Create<CallbacksTestManualType>(CallbacksTestManualType.Write, CallbacksTestManualType.Read)
+      );
+
+      var instance = new CallbacksTestManualType();
+      instance.First = 10;
+
+      var result = SerializeDeserialize(instance);
+
+      Assert.AreEqual(result.First, 10);
+      Assert.AreEqual(result.Second, 10);
+      Assert.AreEqual(result.FromFirstAndSecond, 100);
     }
 
     [TestMethod]

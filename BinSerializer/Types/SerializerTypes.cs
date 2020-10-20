@@ -413,13 +413,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
         // Build
         var info = GetTypeInfo(type);
-        writer = info.GetTypeWriter(type);
-
-        // Add to cache
-        TypeToTypeWritersCache.TryAdd(type, writer);
-
-        // Result
-        return writer;
+        return info.GetTypeWriter(type);
       }
       finally
       {
@@ -445,13 +439,7 @@ namespace ThirtyNineEighty.BinarySerializer.Types
 
         // Build
         var info = GetTypeInfo(type);
-        reader = info.GetTypeReader(type);
-
-        // Add to cache
-        TypeToTypeReadersCache.TryAdd(type, reader);
-
-        // Result
-        return reader;
+        return info.GetTypeReader(type);
       }
       finally
       {

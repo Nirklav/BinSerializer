@@ -50,12 +50,25 @@ namespace ThirtyNineEighty.BinarySerializer
       var getRefId = typeof(RefWriterWatcher)
         .GetTypeInfo()
         .GetMethod(nameof(RefWriterWatcher.GetRefId), BindingFlags.Public | BindingFlags.Static);
+      var onSerializing = typeof(IBinSerializable).GetMethod(nameof(IBinSerializable.OnSerializing));
 
       il.DeclareLocal(typeof(bool));
+      il.DeclareLocal(typeof(SerializationInfo));
 
       var skipTypeLabel = il.DefineLabel();
 
       BSDebug.TraceStart(il, "Write " + type.TypeInfo.Name);
+
+      // Invoke deserialzation callback
+      if (typeof(IBinSerializable).IsAssignableFrom(type.Type))
+      {
+        il.Emit(OpCodes.Ldloca_S, (byte)1);       // Load result local address
+        il.Emit(OpCodes.Initobj, typeof(SerializationInfo));
+
+        il.Emit(OpCodes.Ldarg_1);                 // Load serializing object
+        il.Emit(OpCodes.Ldloc_1);                 // Load created SerializationInfo
+        il.Emit(OpCodes.Callvirt, onSerializing); // Call onSerializing
+      }
 
       // Write type
       il.Emit(OpCodes.Ldarg_0);
@@ -94,33 +107,33 @@ namespace ThirtyNineEighty.BinarySerializer
       }
       else
       {
-        foreach (var field in GetFields(type))
+        foreach (var binField in BinField.Get(type.Type))
         {
           var skipFieldLabel = il.DefineLabel();
 
           // If field is null then skip it
-          if (!field.Info.FieldType.GetTypeInfo().IsValueType)
+          if (!binField.IsValueType)
           {
             il.Emit(OpCodes.Ldarg_1);                 // Load object
-            il.Emit(OpCodes.Ldfld, field.Info);       // Read field form object
+            binField.EmitRead(il);                    // Read field form object
             il.Emit(OpCodes.Brfalse, skipFieldLabel); // Skip if field is null
           }
 
           // Write field id
-          il.Emit(OpCodes.Ldarg_0);                   // Load stream
-          il.Emit(OpCodes.Ldstr, field.Attribute.Id); // Load field id
+          il.Emit(OpCodes.Ldarg_0);             // Load stream
+          il.Emit(OpCodes.Ldstr, binField.Id);  // Load field id
           il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamWriter(typeof(string)));
 
           var serialize = typeof(BinSerializer<>)
-            .MakeGenericType(field.Info.FieldType)
+            .MakeGenericType(binField.Type)
             .GetTypeInfo()
             .GetMethod(nameof(BinSerializer<object>.Serialize), BindingFlags.Static | BindingFlags.Public);
 
           // Write field
-          il.Emit(OpCodes.Ldarg_0);           // Load stream
-          il.Emit(OpCodes.Ldarg_1);           // Load object
-          il.Emit(OpCodes.Ldfld, field.Info); // Read field from object
-          il.Emit(OpCodes.Call, serialize);   // Write field value
+          il.Emit(OpCodes.Ldarg_0);         // Load stream
+          il.Emit(OpCodes.Ldarg_1);         // Load object      
+          binField.EmitRead(il);            // Read field from object
+          il.Emit(OpCodes.Call, serialize); // Write field value
 
           // Skip field label
           il.MarkLabel(skipFieldLabel);
@@ -313,10 +326,14 @@ namespace ThirtyNineEighty.BinarySerializer
         .GetTypeInfo()
         .GetMethod(nameof(string.Equals), new[] { typeof(string), typeof(string), typeof(StringComparison) });
 
-      il.DeclareLocal(typeof(int));    // ref if
-      il.DeclareLocal(type.Type);      // readed object
-      il.DeclareLocal(typeof(string)); // last readed field id
-      il.DeclareLocal(typeof(int));    // readed object version
+      var onDeserialized = typeof(IBinSerializable).GetMethod(nameof(IBinSerializable.OnDeserialized));
+
+
+      il.DeclareLocal(typeof(int));                 // ref if
+      il.DeclareLocal(type.Type);                        // readed object
+      il.DeclareLocal(typeof(string));              // last readed field id
+      il.DeclareLocal(typeof(int));                 // readed object version
+      il.DeclareLocal(typeof(DeserializationInfo)); // info
 
       var resultLabel = il.DefineLabel();
       var readFastLabel = il.DefineLabel();
@@ -435,7 +452,7 @@ namespace ThirtyNineEighty.BinarySerializer
           // Read fields
           Label? nextFieldLabel = null;
 
-          foreach (var field in GetFields(type))
+          foreach (var binField in BinField.Get(type.Type))
           {
             var markCurrent = nextFieldLabel != null;
             if (nextFieldLabel == null)
@@ -453,15 +470,22 @@ namespace ThirtyNineEighty.BinarySerializer
               nextFieldLabel = il.DefineLabel();
             }
 
+            // Compare field id with endToken
+            il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
+            il.Emit(OpCodes.Ldstr, SerializerTypes.TypeEndToken);   // Load endToken id
+            il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
+            il.Emit(OpCodes.Call, stringEquals);                    // Compare
+            il.Emit(OpCodes.Brtrue, resultLabel);                   // This is the end
+
             // Compare field ids, if it not equals then skip read
             il.Emit(OpCodes.Ldloc_2);                               // Load readed field id
-            il.Emit(OpCodes.Ldstr, field.Attribute.Id);             // Load field id 
+            il.Emit(OpCodes.Ldstr, binField.Id);                    // Load field id 
             il.Emit(OpCodes.Ldc_I4, (int)StringComparison.Ordinal); // Load comparsion type
             il.Emit(OpCodes.Call, stringEquals);                    // Compare
             il.Emit(OpCodes.Brfalse, nextFieldLabel.Value);         // These aren't the field your looking for
 
             var deserialize = typeof(BinSerializer<>)
-              .MakeGenericType(field.Info.FieldType)
+              .MakeGenericType(binField.Type)
               .GetTypeInfo()
               .GetMethod(nameof(BinSerializer<object>.Deserialize), BindingFlags.Static | BindingFlags.Public);
 
@@ -476,7 +500,7 @@ namespace ThirtyNineEighty.BinarySerializer
             il.Emit(OpCodes.Call, deserialize);
 
             // Set field
-            il.Emit(OpCodes.Stfld, field.Info);
+            binField.EmitWrite(il);
           }
 
           // Mark jump (for last field)
@@ -488,9 +512,23 @@ namespace ThirtyNineEighty.BinarySerializer
           il.Emit(OpCodes.Call, SerializerTypes.TryGetStreamSkiper(typeof(string)));
         }
       }
+      
+      // Return result and invoke callback
+      il.MarkLabel(resultLabel);
+
+      // Invoke deserialzation callback
+      if (typeof(IBinSerializable).IsAssignableFrom(type.Type))
+      {
+        il.Emit(OpCodes.Ldloca_S, (byte)4);        // Load result local address
+        il.Emit(OpCodes.Ldloc_3);                  // Load version
+        il.Emit(OpCodes.Call, typeof(DeserializationInfo).GetConstructor(new Type[] { typeof(int) }));
+
+        il.Emit(OpCodes.Ldloc_1);                  // Load deserialized object
+        il.Emit(OpCodes.Ldloc_S, (byte)4);         // Load created DeserialzationInfo
+        il.Emit(OpCodes.Callvirt, onDeserialized); // Call onDeserialized
+      }
 
       // Return result
-      il.MarkLabel(resultLabel);
       il.Emit(OpCodes.Ldloc_1);
 
       BSDebug.TraceEnd(il, "Read " + type.TypeInfo.Name);
@@ -607,7 +645,7 @@ namespace ThirtyNineEighty.BinarySerializer
     private static class DynamicObjectReader<T>
     {
       private static readonly TypeImpl Type = new TypeImpl(typeof(T));
-      private static readonly Dictionary<string, FieldInfo> FieldsMap = GetFieldsMap(Type);
+      private static readonly Dictionary<string, BinField> FieldsMap = GetFieldsMap(Type);
 
       [SecurityCritical]
       static DynamicObjectReader()
@@ -629,69 +667,27 @@ namespace ThirtyNineEighty.BinarySerializer
           if (token == SerializerTypes.TypeEndToken)
             break;
 
-          if (!FieldsMap.TryGetValue(token, out FieldInfo field))
+          if (!FieldsMap.TryGetValue(token, out BinField binField))
             continue;
 
-          field.SetValue(boxedInstance, BinSerializer<object>.Deserialize(stream));
+          var value = BinSerializer<object>.Deserialize(stream);
+          binField.SetValue(boxedInstance, value);
         }
 
         return (T)boxedInstance;
       }
 
       [SecurityCritical]
-      private static Dictionary<string, FieldInfo> GetFieldsMap(TypeImpl type)
-      {
-        return GetFields(type).ToDictionary(f => f.Attribute.Id, f => f.Info);
-      }
-    }
-    #endregion
+      private static Dictionary<string, BinField> GetFieldsMap(TypeImpl type) =>
+        BinField.Get(type.Type).ToDictionary(GetFieldId, GetField);
 
-    #region get fields
-    private struct Field
-    {
-      public readonly BinFieldAttribute Attribute;
-      public readonly FieldInfo Info;
+      [SecurityCritical]
+      private static string GetFieldId(BinField f) =>
+        f.Id;
 
-      public Field(BinFieldAttribute attribute, FieldInfo fieldInfo)
-      {
-        Attribute = attribute;
-        Info = fieldInfo;
-      }
-    }
-
-    [SecurityCritical]
-    private static IEnumerable<Field> GetFields(TypeImpl type)
-    {
-      var fields = type.TypeInfo
-        .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-        .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
-        .Where(f => f.Attribute != null);
-
-      var currentType = type;
-      while (true)
-      {
-        currentType = new TypeImpl(currentType.TypeInfo.BaseType);
-        if (typeof(object) == currentType)
-          break;
-
-        var baseTypePrivateFields = currentType.TypeInfo
-          .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-          .Where(f => !f.IsFamily)
-          .Select(f => new Field(f.GetCustomAttribute<BinFieldAttribute>(false), f))
-          .Where(f => f.Attribute != null);
-
-        fields = fields.Concat(baseTypePrivateFields);
-      }
-
-      var declaredIds = new HashSet<string>();
-      foreach (var field in fields.OrderBy(p => p.Attribute.Id))
-      {
-        if (!declaredIds.Add(field.Attribute.Id))
-          throw new ArgumentException($"Field \"{ field.Attribute.Id }\" declared twice in { field.Info.DeclaringType } type");
-        if (field.Info.IsInitOnly)
-          throw new ArgumentException($"Field { field.Info.Name } can't be readonly (IsInitOnly = true). For type { field.Info.DeclaringType }");
-        yield return field;
-      }
+      [SecurityCritical]
+      private static BinField GetField(BinField f) =>
+        f;
     }
     #endregion
   }
