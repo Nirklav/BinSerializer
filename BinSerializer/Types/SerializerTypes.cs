@@ -24,9 +24,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     private static readonly ConcurrentDictionary<string, TypeImpl> TypeIdToTypeCache = new ConcurrentDictionary<string, TypeImpl>();
     private static readonly ConcurrentDictionary<TypeImpl, string> TypeToTypeIdCache = new ConcurrentDictionary<TypeImpl, string>();
 
-    private static readonly ConcurrentDictionary<TypeImpl, MethodInfo> TypeToTypeWritersCache = new ConcurrentDictionary<TypeImpl, MethodInfo>();
-    private static readonly ConcurrentDictionary<TypeImpl, MethodInfo> TypeToTypeReadersCache = new ConcurrentDictionary<TypeImpl, MethodInfo>();
- 
     #region initialization
     [SecuritySafeCritical]
     static SerializerTypes()
@@ -123,7 +120,8 @@ namespace ThirtyNineEighty.BinarySerializer.Types
     [SecurityCritical]
     private static void AddUserDefinedTypes()
     {
-      foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+      var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+      foreach (var assembly in assemblies)
         AddTypesFrom(assembly);
     }
 
@@ -182,16 +180,27 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       {
         foreach (var type in assembly.DefinedTypes)
         {
-          var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
-          if (attribute != null)
+          try
           {
-            var typeImpl = new TypeImpl(type);
-            var description = new BinTypeDescription(typeImpl, attribute.Id);
-            var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
+            var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
+            if (attribute != null)
+            {
+              var typeImpl = new TypeImpl(type);
+              var description = new BinTypeDescription(typeImpl, attribute.Id);
+              var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
 
-            AddTypeImpl(description, version, null);
+              AddTypeImpl(description, version, null);
+            }
+          }
+          catch (Exception e)
+          {
+
           }
         }
+      }
+      catch (Exception e)
+      {
+
       }
       finally
       {
@@ -407,10 +416,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       Locker.EnterReadLock();
       try
       {
-        // Try get from cache
-        if (TypeToTypeWritersCache.TryGetValue(type, out MethodInfo writer))
-          return writer;
-
         // Build
         var info = GetTypeInfo(type);
         return info.GetTypeWriter(type);
@@ -433,10 +438,6 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       Locker.EnterReadLock();
       try
       {
-        // Try get from cache
-        if (TypeToTypeReadersCache.TryGetValue(type, out MethodInfo reader))
-          return reader;
-
         // Build
         var info = GetTypeInfo(type);
         return info.GetTypeReader(type);

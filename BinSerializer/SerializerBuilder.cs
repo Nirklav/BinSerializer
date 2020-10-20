@@ -313,7 +313,7 @@ namespace ThirtyNineEighty.BinarySerializer
 
       var defaultCtor = type.TypeInfo.GetConstructor(Type.EmptyTypes);
       
-      var getUninitializedObject = typeof(RuntimeHelpers)
+      var getUninitializedObject = typeof(FormatterServices)
         .GetTypeInfo()
         .GetMethod(nameof(FormatterServices.GetUninitializedObject), BindingFlags.Public | BindingFlags.Static);
 

@@ -599,6 +599,7 @@ namespace Tests
     }
 
     [BinType("CallbacksTestType", Version = 42)]
+    [SecuritySafeCritical]
     public class CallbacksTestType : IBinSerializable
     {
       [BinField("f")] public int First;
@@ -635,6 +636,7 @@ namespace Tests
       Assert.AreEqual(result.FromFirstAndSecond, 100);
     }
 
+    [SecuritySafeCritical]
     public class CallbacksTestManualType : IBinSerializable
     {
       public int First;
@@ -656,6 +658,7 @@ namespace Tests
         }
       }
 
+      [SecuritySafeCritical]
       public static void Write(Stream stream, CallbacksTestManualType instance)
       {
         stream.Write(instance.First);
@@ -663,6 +666,7 @@ namespace Tests
         stream.Write(instance.FromFirstAndSecond);
       }
 
+      [SecuritySafeCritical]
       public static CallbacksTestManualType Read(Stream stream, CallbacksTestManualType instance, int version)
       {
         instance.First = stream.ReadInt32();
