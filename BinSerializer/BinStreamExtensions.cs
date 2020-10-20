@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Security;
 
 namespace ThirtyNineEighty.BinarySerializer
@@ -68,15 +67,13 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(short), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, short obj)
+    public unsafe static void Write(this Stream stream, short obj)
     {
       BSDebug.TraceStart("WriteInt16", stream.Position);
 
-      var b1 = (byte)(obj & 0xFF);
-      var b2 = (byte)((obj & (0xFF << 8)) >> 8);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
 
       BSDebug.TraceEnd("WriteInt16", stream.Position);
     }
@@ -84,15 +81,13 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(ushort), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, ushort obj)
+    public unsafe static void Write(this Stream stream, ushort obj)
     {
       BSDebug.TraceStart("WriteUInt16", stream.Position);
 
-      var b1 = (byte)(obj & 0xFF);
-      var b2 = (byte)((obj & (0xFF << 8)) >> 8);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
 
       BSDebug.TraceEnd("WriteUInt16", stream.Position);
     }
@@ -100,15 +95,13 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(char), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, char obj)
+    public unsafe static void Write(this Stream stream, char obj)
     {
       BSDebug.TraceStart("WriteChar", stream.Position);
 
-      var b1 = (byte)(obj & 0xFF);
-      var b2 = (byte)((obj & (0xFF << 8)) >> 8);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
+      var objPtr = (byte*) &obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
 
       BSDebug.TraceEnd("WriteChar", stream.Position);
     }
@@ -116,19 +109,15 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(int), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, int obj)
+    public unsafe static void Write(this Stream stream, int obj)
     {
       BSDebug.TraceStart("WriteInt32", stream.Position);
 
-      var b1 = (byte)(obj & 0xFF);
-      var b2 = (byte)((obj & (0xFF << 8)) >> 8);
-      var b3 = (byte)((obj & (0xFF << 16)) >> 16);
-      var b4 = (byte)((obj & (0xFF << 24)) >> 24);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
-      stream.WriteByte(b3);
-      stream.WriteByte(b4);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
 
       BSDebug.TraceEnd("WriteInt32", stream.Position);
     }
@@ -136,19 +125,15 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(uint), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, uint obj)
+    public unsafe static void Write(this Stream stream, uint obj)
     {
       BSDebug.TraceStart("WriteUInt32", stream.Position);
 
-      var b1 = (byte)(obj & 0xFF);
-      var b2 = (byte)((obj & (0xFF << 8)) >> 8);
-      var b3 = (byte)((obj & (0xFF << 16)) >> 16);
-      var b4 = (byte)((obj & (0xFF << 24)) >> 24);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
-      stream.WriteByte(b3);
-      stream.WriteByte(b4);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
 
       BSDebug.TraceEnd("WriteUInt32", stream.Position);
     }
@@ -156,27 +141,19 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(long), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, long obj)
+    public unsafe static void Write(this Stream stream, long obj)
     {
       BSDebug.TraceStart("WriteInt64", stream.Position);
 
-      var b1 = (byte)(obj & 0xFFL);
-      var b2 = (byte)((obj & (0xFFL << 8)) >> 8);
-      var b3 = (byte)((obj & (0xFFL << 16)) >> 16);
-      var b4 = (byte)((obj & (0xFFL << 24)) >> 24);
-      var b5 = (byte)((obj & (0xFFL << 32)) >> 32);
-      var b6 = (byte)((obj & (0xFFL << 40)) >> 40);
-      var b7 = (byte)((obj & (0xFFL << 48)) >> 48);
-      var b8 = (byte)((obj & (0xFFL << 56)) >> 56);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
-      stream.WriteByte(b3);
-      stream.WriteByte(b4);
-      stream.WriteByte(b5);
-      stream.WriteByte(b6);
-      stream.WriteByte(b7);
-      stream.WriteByte(b8);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
+      stream.WriteByte(objPtr[4]);
+      stream.WriteByte(objPtr[5]);
+      stream.WriteByte(objPtr[6]);
+      stream.WriteByte(objPtr[7]);
 
       BSDebug.TraceEnd("WriteInt64", stream.Position);
     }
@@ -184,28 +161,19 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(ulong), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, ulong obj)
+    public unsafe static void Write(this Stream stream, ulong obj)
     {
       BSDebug.TraceStart("WriteUInt64", stream.Position);
 
-      var objL = (long)obj;
-      var b1 = (byte)(objL & 0xFFL);
-      var b2 = (byte)((objL & (0xFFL << 8)) >> 8);
-      var b3 = (byte)((objL & (0xFFL << 16)) >> 16);
-      var b4 = (byte)((objL & (0xFFL << 24)) >> 24);
-      var b5 = (byte)((objL & (0xFFL << 32)) >> 32);
-      var b6 = (byte)((objL & (0xFFL << 40)) >> 40);
-      var b7 = (byte)((objL & (0xFFL << 48)) >> 48);
-      var b8 = (byte)((objL & (0xFFL << 56)) >> 56);
-
-      stream.WriteByte(b1);
-      stream.WriteByte(b2);
-      stream.WriteByte(b3);
-      stream.WriteByte(b4);
-      stream.WriteByte(b5);
-      stream.WriteByte(b6);
-      stream.WriteByte(b7);
-      stream.WriteByte(b8);
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
+      stream.WriteByte(objPtr[4]);
+      stream.WriteByte(objPtr[5]);
+      stream.WriteByte(objPtr[6]);
+      stream.WriteByte(objPtr[7]);
 
       BSDebug.TraceEnd("WriteUInt64", stream.Position);
     }
@@ -213,11 +181,15 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(float), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, float obj)
+    public unsafe static void Write(this Stream stream, float obj)
     {
       BSDebug.TraceStart("WriteSingle", stream.Position);
 
-      stream.Write(ToInt(obj));
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
 
       BSDebug.TraceEnd("WriteSingle", stream.Position);
     }
@@ -225,11 +197,19 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(double), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, double obj)
+    public unsafe static void Write(this Stream stream, double obj)
     {
       BSDebug.TraceStart("WriteDouble", stream.Position);
 
-      stream.Write(ToLong(obj));
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
+      stream.WriteByte(objPtr[4]);
+      stream.WriteByte(objPtr[5]);
+      stream.WriteByte(objPtr[6]);
+      stream.WriteByte(objPtr[7]);
 
       BSDebug.TraceEnd("WriteDouble", stream.Position);
     }
@@ -237,16 +217,27 @@ namespace ThirtyNineEighty.BinarySerializer
     [SecuritySafeCritical]
     [BinStreamExtension(typeof(decimal), StreamExtensionKind.Write)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this Stream stream, decimal obj)
+    public unsafe static void Write(this Stream stream, decimal obj)
     {
       BSDebug.TraceStart("WriteDecimal", stream.Position);
 
-      unsafe
-      {
-        var p = (long*)&obj;
-        stream.Write(p[0]);
-        stream.Write(p[1]);
-      }
+      var objPtr = (byte*)&obj;
+      stream.WriteByte(objPtr[0]);
+      stream.WriteByte(objPtr[1]);
+      stream.WriteByte(objPtr[2]);
+      stream.WriteByte(objPtr[3]);
+      stream.WriteByte(objPtr[4]);
+      stream.WriteByte(objPtr[5]);
+      stream.WriteByte(objPtr[6]);
+      stream.WriteByte(objPtr[7]);
+      stream.WriteByte(objPtr[8]);
+      stream.WriteByte(objPtr[9]);
+      stream.WriteByte(objPtr[10]);
+      stream.WriteByte(objPtr[11]);
+      stream.WriteByte(objPtr[12]);
+      stream.WriteByte(objPtr[13]);
+      stream.WriteByte(objPtr[14]);
+      stream.WriteByte(objPtr[15]);
 
       BSDebug.TraceEnd("WriteDecimal", stream.Position);
     }
@@ -258,7 +249,7 @@ namespace ThirtyNineEighty.BinarySerializer
     {
       BSDebug.TraceStart("WriteString", stream.Position);
 
-      const int useBufferFrom = 7;
+      const int useBufferFrom = 4;
 
       var length = obj.Length;
       var bytesLength = length * sizeof(char);
@@ -272,24 +263,21 @@ namespace ThirtyNineEighty.BinarySerializer
         {
           fixed (char* objPtr = obj)
           {
-            var valueBytePtr = (byte*)objPtr;
-            for (int i = 0; i < bytesLength; i++)
-              stream.WriteByte(valueBytePtr[i]);
+            var objBytePtr = (byte*)objPtr;
+            for (var i = 0; i < bytesLength; i++)
+              stream.WriteByte(objBytePtr[i]);
           }
         }
       }
       else
       {
         var buffer = Buffers.Get(bytesLength);
+
         unsafe
         {
-          // It work faster but unfortunately available only from .net framework 4.6
-          //fixed (char* valuePtr = value)
-          //  fixed (byte* bufferPtr = buffer)
-          //    Buffer.MemoryCopy(valuePtr, bufferPtr, buffer.Length, usedLength);
-
-          fixed (void* objPtr = obj)
-            Marshal.Copy(new IntPtr(objPtr), buffer, 0, bytesLength);
+          fixed (char* valuePtr = obj)
+            fixed (byte* bufferPtr = buffer)
+              Buffer.MemoryCopy(valuePtr, bufferPtr, buffer.Length, bytesLength);
         }
 
         // Write data

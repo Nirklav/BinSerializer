@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ThirtyNineEighty.BinarySerializer</RootNamespace>
     <AssemblyName>BinSerializer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <CopyNuGetImplementations>false</CopyNuGetImplementations>
@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="BinField.cs" />
     <Compile Include="BinSerializer.cs" />
+    <Compile Include="BinSerializerConfig.cs" />
     <Compile Include="BSDebug.cs" />
     <Compile Include="BinFieldAttribute.cs" />
     <Compile Include="IBinSerializable.cs" />
