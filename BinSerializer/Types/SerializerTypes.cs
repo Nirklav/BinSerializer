@@ -180,27 +180,16 @@ namespace ThirtyNineEighty.BinarySerializer.Types
       {
         foreach (var type in assembly.DefinedTypes)
         {
-          try
+          var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
+          if (attribute != null)
           {
-            var attribute = type.GetCustomAttribute<BinTypeAttribute>(false);
-            if (attribute != null)
-            {
-              var typeImpl = new TypeImpl(type);
-              var description = new BinTypeDescription(typeImpl, attribute.Id);
-              var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
+            var typeImpl = new TypeImpl(type);
+            var description = new BinTypeDescription(typeImpl, attribute.Id);
+            var version = new BinTypeVersion(attribute.Version, attribute.MinSupportedVersion);
 
-              AddTypeImpl(description, version, null);
-            }
-          }
-          catch (Exception e)
-          {
-
+            AddTypeImpl(description, version, null);
           }
         }
-      }
-      catch (Exception e)
-      {
-
       }
       finally
       {
