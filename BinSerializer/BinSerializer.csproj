@@ -5,7 +5,8 @@
     <RootNamespace>ThirtyNineEighty.BinarySerializer</RootNamespace>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>BinSerializerStrongName.snk</AssemblyOriginatorKeyFile>
-    <PackageId>ThirtyNineEighty.BinSerializer</PackageId>
+    <Title>ThirtyNineEighty.BinarySerializer</Title>
+    <PackageId>ThirtyNineEighty.BinarySerializer</PackageId>
     <Company>ThirtyNineEighty</Company>
     <Product>BinSerializer</Product>
     <Description>Binary serializer</Description>
