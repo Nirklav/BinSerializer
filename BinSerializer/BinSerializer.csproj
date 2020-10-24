@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>ThirtyNineEighty.BinarySerializer</RootNamespace>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>BinSerializerStrongName.snk</AssemblyOriginatorKeyFile>
@@ -11,12 +11,16 @@
     <Description>Binary serializer</Description>
     <Copyright>Copyright © ThirtyNineEighty 2016</Copyright>
     <Authors>Nirklav</Authors>
-    <Version>2.0.0</Version>
-    <PackageLicenseUrl>https://github.com/Nirklav/BinSerializer/blob/master/LICENSE.md</PackageLicenseUrl>
+    <Version>3.0.0</Version>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Nirklav/BinSerializer</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Nirklav/BinSerializer</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Serializer BinarySerializer</PackageTags>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -32,6 +36,13 @@
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
     <PackageReference Include="System.Security.Permissions" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
