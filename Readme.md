@@ -153,26 +153,14 @@ With generics:
 ### PerfTest result:
 This is a console output from PerfTest project:
 ```
-Bin: 3667ms
-Formatter: 7523ms
-Bin: 3505ms
-Formatter: 7372ms
-Bin: 3450ms
-Formatter: 7327ms
-Bin: 3453ms
-Formatter: 7347ms
-Bin: 3446ms
-Formatter: 7356ms
-Bin: 3448ms
-Formatter: 7318ms
-Bin: 3450ms
-Formatter: 7356ms
-Bin: 3454ms
-Formatter: 7332ms
-Bin: 3454ms
-Formatter: 7355ms
-Bin: 3448ms
-Formatter: 7379ms
+|                      Method |      Mean |     Error |    StdDev |
+|---------------------------- |----------:|----------:|----------:|
+|     BinSerializer_Serialize |  6.947 us | 0.0067 us | 0.0060 us |
+|   BinaryFormatter_Serialize | 22.222 us | 0.1474 us | 0.1378 us |
+|       MessagePack_Serialize |  1.174 us | 0.0104 us | 0.0097 us |
+|   BinSerializer_Deserialize |  6.408 us | 0.0405 us | 0.0379 us |
+| BinaryFormatter_Deserialize | 30.445 us | 0.0879 us | 0.0822 us |
+|     MessagePack_Deserialize |  1.441 us | 0.0044 us | 0.0041 us |
 ```
 
 ### Serialization format:
