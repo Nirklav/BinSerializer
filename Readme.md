@@ -3,8 +3,8 @@
 - Generics support.
 - References supprot.
 - Backward compatibility (with versions).
-- ValueTypes serialized and deserialized without boxing (Except for the case when type versions not equals).
-- Two times faster than BinaryFormatter.
+- ValueTypes being serialized and deserialized without boxing (Except for the case when type versions not equals).
+- Four times faster than BinaryFormatter.
 - Supports manual serialization and deserialzation.
 
 ### Install:
@@ -60,7 +60,7 @@ With generics:
 
 With version:
 
-Version should be increased when fields added or removed from type.
+Version should be increased when fields were added or removed from type.
 
 And with callbacks you always can process old data manually.
 ``` C#
